@@ -33,3 +33,18 @@ tests/*/*.php
 tests/*/*.exp
 tests/*/*.log
 tests/*/*.sh
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
