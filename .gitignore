@@ -1,3 +1,4 @@
+*.swp
 .deps
 *.lo
 *.la
