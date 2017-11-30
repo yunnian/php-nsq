@@ -9,11 +9,11 @@ dnl If your extension references something external, use with:
 
 PHP_ARG_WITH(nsq, for nsq support,
  Make sure that the comment is aligned:
- [  --with-nsq             Include nsq support])
+ [  --with-nsq             Include nsq support],no,no)
 
-PHP_ARG_WITH(libevent-path, for nsq support,
+PHP_ARG_WITH(libevent-path, for libevent support,
  Make sure that the comment is aligned:
- [  --with-libevent-path             you libevent path])
+ [  --with-libevent-path[=DIR]             you libevent path],no,no)
 
 dnl Otherwise use enable:
 
@@ -21,12 +21,15 @@ dnl PHP_ARG_ENABLE(nsq, whether to enable nsq support,
 dnl Make sure that the comment is aligned:
 dnl [  --enable-nsq           Enable nsq support])
 
+echo "nsq:$PHP_NSQ";
+echo "bbbbbbbbbbbb:$PHP_LIBEVENT_PATH";
+echo "curl:$PHP_CURL";
 if test "$PHP_NSQ" != "no"; then
   SEARCH_PATH="/usr /usr/local /opt/local /usr/local/Cellar/libevent/*"
   SEARCH_FOR="/include/event2/event.h"
 
-echo "bbbbbbbbbbbb:$PHP_LIBEVENT";
-  if test "$PHP_LIBEVENT" = "yes"; then
+echo "bbbbbbbbbbbb:$PHP_LIBEVENT_PATH";
+  if test "$PHP_LIBEVENT_PATH" = "no"; then
     AC_MSG_CHECKING([for libevent headers in default path])
     for i in $SEARCH_PATH ; do
 	echo i;
@@ -36,9 +39,9 @@ echo "bbbbbbbbbbbb:$PHP_LIBEVENT";
       fi
     done
   else
-    AC_MSG_CHECKING([for libevent headers in $PHP_LIBEVENT])
-    if test -r $PHP_LIBEVENT/$SEARCH_FOR; then
-      LIBEVENT_DIR=$PHP_LIBEVENT
+    AC_MSG_CHECKING([for libevent headers in $PHP_LIBEVENT_PATH])
+    if test -r $PHP_LIBEVENT_PATH/$SEARCH_FOR; then
+      LIBEVENT_DIR=$PHP_LIBEVENT_PATH
       AC_MSG_RESULT([found])
     fi
   fi
