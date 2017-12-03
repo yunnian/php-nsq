@@ -22,4 +22,5 @@ echo "$str\n";
 */
 $d = subscribe("sss");
 var_dump($d);
+
 ?>
