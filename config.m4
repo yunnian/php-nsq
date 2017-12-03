@@ -57,15 +57,19 @@ echo "libevent-path:$LIBEVENT_DIR";
 
   PHP_CHECK_LIBRARY($LIBNAME,$LIBSYMBOL,
   [
-    PHP_ADD_LIBRARY_WITH_PATH($LIBNAME, $LIBEVENT_DIR/$PHP_LIBDIR, LIBEVENT_SHARED_LIBADD)
+    PHP_ADD_LIBRARY_WITH_PATH($LIBNAME, $LIBEVENT_DIR/$PHP_LIBDIR, NSQ_SHARED_LIBADD)
+    dnl PHP_ADD_LIBRARY_WITH_PATH($LIBNAME)
+
   ],[
     AC_MSG_ERROR([wrong libevent version {1.4.+ is required} or lib not found])
   ],[
-    -L$LIBEVENT_DIR/$PHP_LIBDIR 
+    dnl -L$LIBEVENT_DIR/$PHP_LIBDIR 
+    echo "sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfs"
+    -l$LIBNAME 
   ])
 
-  PHP_ADD_EXTENSION_DEP(libevent, sockets, true)
-  PHP_SUBST(LIBEVENT_SHARED_LIBADD)
+  dnl PHP_ADD_EXTENSION_DEP(libevent, sockets, true)
+  dnl PHP_SUBST(LIBEVENT_SHARED_LIBADD)
   dnl Write more examples of tests here...
 
   dnl # --with-nsq -> check with-path
@@ -105,7 +109,7 @@ echo "libevent-path:$LIBEVENT_DIR";
   dnl   -L$NSQ_DIR/$PHP_LIBDIR -lm
   dnl ])
   dnl
-  dnl PHP_SUBST(NSQ_SHARED_LIBADD)
+  PHP_SUBST(NSQ_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(nsq, nsq.c, $ext_shared,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
 fi

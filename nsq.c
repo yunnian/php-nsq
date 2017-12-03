@@ -26,6 +26,12 @@
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "php_nsq.h"
+#include <event2/bufferevent.h>  
+#include <event2/buffer.h>  
+#include <event2/listener.h>  
+#include <event2/util.h>  
+#include <event2/event.h>  
+
 
 /* If you declare any globals in php_nsq.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(nsq)
@@ -51,9 +57,10 @@ PHP_INI_END()
 /* Every user-visible function in PHP should document itself in the source */
 /* {{{ proto string confirm_nsq_compiled(string arg)
    Return a string to confirm that the module is compiled in */
-PHP_FUNCTION(confirm_nsq_compiled)
+PHP_FUNCTION(subscribe)
 {
 	char *arg = NULL;
+    struct event_base *base = event_base_new();  
 	size_t arg_len, len;
 	zend_string *strg;
 
@@ -146,7 +153,7 @@ PHP_MINFO_FUNCTION(nsq)
  * Every user visible function must have an entry in nsq_functions[].
  */
 const zend_function_entry nsq_functions[] = {
-	PHP_FE(confirm_nsq_compiled,	NULL)		/* For testing, remove later. */
+	PHP_FE(subscribe,	NULL)		/* For testing, remove later. */
 	PHP_FE_END	/* Must be the last line in nsq_functions[] */
 };
 /* }}} */
