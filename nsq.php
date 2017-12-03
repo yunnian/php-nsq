@@ -20,5 +20,6 @@ if (extension_loaded($module)) {
 }
 echo "$str\n";
 */
-subscribe("sss");
+$d = subscribe("sss");
+var_dump($d);
 ?>
