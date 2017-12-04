@@ -57,7 +57,10 @@ PHP_INI_END()
 /* Every user-visible function in PHP should document itself in the source */
 /* {{{ proto string confirm_nsq_compiled(string arg)
    Return a string to confirm that the module is compiled in */
-PHP_FUNCTION(subscribe)
+zend_class_entry *nsq_lookupd_ce;
+zend_class_entry *nsq_ce;
+
+PHP_METHOD(Nsq,subscribe)
 {
 	char *arg = NULL;
     struct event_base *base = event_base_new();  
@@ -95,6 +98,20 @@ static void php_nsq_init_globals(zend_nsq_globals *nsq_globals)
  */
 PHP_MINIT_FUNCTION(nsq)
 {
+    zend_class_entry nsq_lookupd;
+    INIT_CLASS_ENTRY(nsq_lookupd,"NsqLookupd",nsq_lookupd_functions);
+    //nsq_lookupd_ce = zend_register_internal_class_ex(&nsq_lookupd,NULL,NULL TSRMLS_CC);
+    nsq_lookupd_ce =
+    zend_register_internal_class(&nsq_lookupd
+    TSRMLS_CC);
+    zend_declare_property_null(nsq_lookupd_ce,ZEND_STRL("address"),ZEND_ACC_PUBLIC TSRMLS_CC);
+
+    zend_class_entry nsq;
+    INIT_CLASS_ENTRY(nsq,"Nsq",nsq_functions);
+    nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
+    //nsq_ce = zend_register_internal_class_ex(&nsq,NULL,NULL TSRMLS_CC);
+    //zend_declare_property_null(person_ce,ZEND_STRL("address"),ZEND_ACC_PUBLIC TSRMLS_CC);
+    
 	/* If you have INI entries, uncomment these lines
 	REGISTER_INI_ENTRIES();
 	*/
@@ -163,7 +180,7 @@ const zend_function_entry nsq_functions[] = {
 zend_module_entry nsq_module_entry = {
 	STANDARD_MODULE_HEADER,
 	"nsq",
-	nsq_functions,
+	NULL, //nsq_functions,
 	PHP_MINIT(nsq),
 	PHP_MSHUTDOWN(nsq),
 	PHP_RINIT(nsq),		/* Replace with NULL if there's nothing to do at request start */
