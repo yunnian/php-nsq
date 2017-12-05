@@ -64,7 +64,6 @@ PHP_METHOD(Nsq,subscribe)
 {
 	char *arg = NULL;
     struct event_base *base = event_base_new();  
-	size_t arg_len, len;
 	zend_string *strg;
 	zend_string *msg;
 	zend_fcall_info  fci;
@@ -72,20 +71,12 @@ PHP_METHOD(Nsq,subscribe)
 	zval *config;
 	zval retval;
 	zval params[1];
-	
 
-#ifndef FAST_ZPP
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f*", &fci, &fcc, &arg_len) == FAILURE) {
-		return;
-	}
-#else
 	ZEND_PARSE_PARAMETERS_START(2,2)
 		Z_PARAM_ARRAY(config)
 		Z_PARAM_FUNC(fci, fcc)
 
 	ZEND_PARSE_PARAMETERS_END();
-#endif
-	
 
 	strg = strpprintf(0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "nsq", arg);
 
