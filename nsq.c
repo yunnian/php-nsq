@@ -66,14 +66,37 @@ PHP_METHOD(Nsq,subscribe)
     struct event_base *base = event_base_new();  
 	size_t arg_len, len;
 	zend_string *strg;
+	zend_string *msg;
+	zend_fcall_info  fci;
+	zend_fcall_info_cache fcc;
+	zval *config;
+	zval retval;
+	zval params[1];
+	
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &arg, &arg_len) == FAILURE) {
+#ifndef FAST_ZPP
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f*", &fci, &fcc, &arg_len) == FAILURE) {
 		return;
 	}
+#else
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_ARRAY(config)
+		Z_PARAM_FUNC(fci, fcc)
+
+	ZEND_PARSE_PARAMETERS_END();
+#endif
+	
 
 	strg = strpprintf(0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "nsq", arg);
 
-	RETURN_STR(strg);
+	ZVAL_STR_COPY(&params[0], strg);  
+	fci.params = params;
+	fci.param_count = 1;
+	fci.retval = &retval;
+	zend_call_function(&fci, &fcc TSRMLS_CC);
+
+	//RETURN_STR(strg);
+    //add_index_zval(return_value,333,config);
 }
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and
@@ -93,6 +116,26 @@ static void php_nsq_init_globals(zend_nsq_globals *nsq_globals)
 }
 */
 /* }}} */
+
+/* {{{ nsq_functions[]
+ *
+ * Every user visible function must have an entry in nsq_functions[].
+ */
+ ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_subscribe, 0, 0, -1)
+    ZEND_ARG_INFO(0, conifg)
+    ZEND_ARG_INFO(0, callback)
+ZEND_END_ARG_INFO()
+const zend_function_entry nsq_functions[] = {
+	//PHP_FE(subscribe,	NULL)		/* For testing, remove later. */
+    PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
+	PHP_FE_END	/* Must be the last line in nsq_functions[] */
+};
+const zend_function_entry nsq_lookupd_functions[] = {
+	PHP_FE_END	/* Must be the last line in nsq_functions[] */
+
+};
+/* }}} */
+
 
 /* {{{ PHP_MINIT_FUNCTION
  */
@@ -163,16 +206,6 @@ PHP_MINFO_FUNCTION(nsq)
 	DISPLAY_INI_ENTRIES();
 	*/
 }
-/* }}} */
-
-/* {{{ nsq_functions[]
- *
- * Every user visible function must have an entry in nsq_functions[].
- */
-const zend_function_entry nsq_functions[] = {
-	PHP_FE(subscribe,	NULL)		/* For testing, remove later. */
-	PHP_FE_END	/* Must be the last line in nsq_functions[] */
-};
 /* }}} */
 
 /* {{{ nsq_module_entry
