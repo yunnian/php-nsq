@@ -58,6 +58,7 @@ PHP_INI_END()
 /* {{{ proto string confirm_nsq_compiled(string arg)
    Return a string to confirm that the module is compiled in */
 zend_class_entry *nsq_lookupd_ce;
+zend_class_entry *nsq_config;
 zend_class_entry *nsq_ce;
 
 PHP_METHOD(Nsq,subscribe)
@@ -75,7 +76,6 @@ PHP_METHOD(Nsq,subscribe)
 	ZEND_PARSE_PARAMETERS_START(2,2)
 		Z_PARAM_ARRAY(config)
 		Z_PARAM_FUNC(fci, fcc)
-
 	ZEND_PARSE_PARAMETERS_END();
 
 	strg = strpprintf(0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "nsq", arg);
@@ -116,6 +116,7 @@ static void php_nsq_init_globals(zend_nsq_globals *nsq_globals)
     ZEND_ARG_INFO(0, conifg)
     ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO()
+
 const zend_function_entry nsq_functions[] = {
 	//PHP_FE(subscribe,	NULL)		/* For testing, remove later. */
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
@@ -132,12 +133,6 @@ const zend_function_entry nsq_lookupd_functions[] = {
  */
 PHP_MINIT_FUNCTION(nsq)
 {
-    zend_class_entry nsq_lookupd;
-    INIT_CLASS_ENTRY(nsq_lookupd,"NsqLookupd",nsq_lookupd_functions);
-    //nsq_lookupd_ce = zend_register_internal_class_ex(&nsq_lookupd,NULL,NULL TSRMLS_CC);
-    nsq_lookupd_ce =
-    zend_register_internal_class(&nsq_lookupd
-    TSRMLS_CC);
     zend_declare_property_null(nsq_lookupd_ce,ZEND_STRL("address"),ZEND_ACC_PUBLIC TSRMLS_CC);
 
     zend_class_entry nsq;
@@ -149,6 +144,13 @@ PHP_MINIT_FUNCTION(nsq)
 	/* If you have INI entries, uncomment these lines
 	REGISTER_INI_ENTRIES();
 	*/
+    lookupd_init();
+    //conifg_init();
+
+    zend_class_entry nsq_lookupd;
+    INIT_CLASS_ENTRY(nsq_lookupd,"NsqLookupd",nsq_lookupd_functions);
+    //nsq_lookupd_ce = zend_register_internal_class_ex(&nsq_lookupd,NULL,NULL TSRMLS_CC);
+    nsq_lookupd_ce = zend_register_internal_class(&nsq_lookupd TSRMLS_CC);
 	return SUCCESS;
 }
 /* }}} */
@@ -229,4 +231,4 @@ ZEND_GET_MODULE(nsq)
  * End:
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
- */
+ /

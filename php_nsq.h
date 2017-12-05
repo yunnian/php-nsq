@@ -38,6 +38,8 @@ extern zend_module_entry nsq_module_entry;
 #include "TSRM.h"
 #endif
 
+void lookupd_init();
+
 /*
   	Declare any global variables you may need between the BEGIN
 	and END macros here:
