@@ -15,8 +15,7 @@ class nihao{
 }
 //$nsq->subscribe($config,["nihao","h"]);
 //$nsq->subscribe($config);
-$nsq->subscribe($config,function($msg){
-
+$nsq->subscribe($nsq_lookupd, $config, function($msg){ 
    echo "msg:".$msg; 
 
 });

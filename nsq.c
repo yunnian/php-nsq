@@ -23,6 +23,7 @@
 #endif
 
 #include "php.h"
+#include "ext/standard/php_var.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "php_nsq.h"
@@ -57,8 +58,6 @@ PHP_INI_END()
 /* Every user-visible function in PHP should document itself in the source */
 /* {{{ proto string confirm_nsq_compiled(string arg)
    Return a string to confirm that the module is compiled in */
-zend_class_entry *nsq_lookupd_ce;
-zend_class_entry *nsq_config;
 zend_class_entry *nsq_ce;
 
 PHP_METHOD(Nsq,subscribe)
@@ -72,14 +71,11 @@ PHP_METHOD(Nsq,subscribe)
 	zval *config;
 	zval retval;
 	zval params[1];
-    zend_class_entry *class_lookupd;
-    zend_string *topic;
-    zend_string *channel;
+    zval *class_lookupd;
 
-	ZEND_PARSE_PARAMETERS_START(4,4)
-        Z_PARAM_CLASS(class_lookupd)
-        Z_PARAM_STR(topic)
-        Z_PARAM_STR(channel)
+	ZEND_PARSE_PARAMETERS_START(3,3)
+        Z_PARAM_OBJECT(class_lookupd)
+        Z_PARAM_ARRAY(config)
 		Z_PARAM_FUNC(fci, fcc)
 	ZEND_PARSE_PARAMETERS_END();
 
@@ -89,6 +85,9 @@ PHP_METHOD(Nsq,subscribe)
 	fci.params = params;
 	fci.param_count = 1;
 	fci.retval = &retval;
+    php_var_dump(config, 1);
+
+
 	zend_call_function(&fci, &fcc TSRMLS_CC);
 
 	//RETURN_STR(strg);
@@ -134,7 +133,6 @@ const zend_function_entry nsq_functions[] = {
  */
 PHP_MINIT_FUNCTION(nsq)
 {
-    zend_declare_property_null(nsq_lookupd_ce,ZEND_STRL("address"),ZEND_ACC_PUBLIC TSRMLS_CC);
 
     zend_class_entry nsq;
     INIT_CLASS_ENTRY(nsq,"Nsq",nsq_functions);
