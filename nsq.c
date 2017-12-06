@@ -72,9 +72,14 @@ PHP_METHOD(Nsq,subscribe)
 	zval *config;
 	zval retval;
 	zval params[1];
+    zend_class_entry *class_lookupd;
+    zend_string *topic;
+    zend_string *channel;
 
-	ZEND_PARSE_PARAMETERS_START(2,2)
-		Z_PARAM_ARRAY(config)
+	ZEND_PARSE_PARAMETERS_START(4,4)
+        Z_PARAM_CLASS(class_lookupd)
+        Z_PARAM_STR(topic)
+        Z_PARAM_STR(channel)
 		Z_PARAM_FUNC(fci, fcc)
 	ZEND_PARSE_PARAMETERS_END();
 
@@ -122,10 +127,6 @@ const zend_function_entry nsq_functions[] = {
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
 	PHP_FE_END	/* Must be the last line in nsq_functions[] */
 };
-const zend_function_entry nsq_lookupd_functions[] = {
-	PHP_FE_END	/* Must be the last line in nsq_functions[] */
-
-};
 /* }}} */
 
 
@@ -147,10 +148,6 @@ PHP_MINIT_FUNCTION(nsq)
     lookupd_init();
     //conifg_init();
 
-    zend_class_entry nsq_lookupd;
-    INIT_CLASS_ENTRY(nsq_lookupd,"NsqLookupd",nsq_lookupd_functions);
-    //nsq_lookupd_ce = zend_register_internal_class_ex(&nsq_lookupd,NULL,NULL TSRMLS_CC);
-    nsq_lookupd_ce = zend_register_internal_class(&nsq_lookupd TSRMLS_CC);
 	return SUCCESS;
 }
 /* }}} */
@@ -231,4 +228,4 @@ ZEND_GET_MODULE(nsq)
  * End:
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
- /
+ */
