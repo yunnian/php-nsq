@@ -26,6 +26,7 @@
 #include "ext/standard/php_var.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+#include "ext/json/php_json.h"
 #include "php_nsq.h"
 #include <event2/bufferevent.h>  
 #include <event2/buffer.h>  
@@ -86,6 +87,11 @@ PHP_METHOD(Nsq,subscribe)
 	fci.param_count = 1;
 	fci.retval = &retval;
     php_var_dump(config, 1);
+    zval * test;
+    array_init(test);
+    char * s = "{\"message\":\"NOT_FOUND\"}";
+    php_json_decode(test, s, strlen(s),0,1);
+    php_var_dump(test, 1);
 
 
 	zend_call_function(&fci, &fcc TSRMLS_CC);
