@@ -87,11 +87,11 @@ PHP_METHOD(Nsq,subscribe)
 	fci.param_count = 1;
 	fci.retval = &retval;
     php_var_dump(config, 1);
-    zval * test;
-    array_init(test);
+    zval  test;
     char * s = "{\"message\":\"NOT_FOUND\"}";
-    php_json_decode(test, s, strlen(s),0,1);
-    php_var_dump(test, 1);
+    php_json_decode(&test, s, strlen(s),1,2);
+    //zend_array *arr = test.value.arr;
+    php_var_dump(&test, 1);
 
 
 	zend_call_function(&fci, &fcc TSRMLS_CC);
