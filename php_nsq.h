@@ -39,6 +39,7 @@ extern zend_module_entry nsq_module_entry;
 #endif
 
 void lookupd_init();
+char* lookup();
 
 /*
   	Declare any global variables you may need between the BEGIN
