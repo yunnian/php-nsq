@@ -15,6 +15,9 @@ PHP_ARG_WITH(libevent-path, for libevent support,
  Make sure that the comment is aligned:
  [  --with-libevent-path[=DIR]             you libevent path],no,no)
 
+PHP_ARG_WITH(debug, for debug  support,
+ Make sure that the comment is aligned:
+ [  --enable-debug     you debug],no,no)
 dnl Otherwise use enable:
 
 dnl PHP_ARG_ENABLE(nsq, whether to enable nsq support,
@@ -67,6 +70,16 @@ echo "libevent-path:$LIBEVENT_DIR";
     echo "sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfs"
     -l$LIBNAME 
   ])
+
+
+if test -z "$PHP_DEBUG"; then   
+    AC_ARG_ENABLE(debug,  
+    [ --enable-debug      compile with debugging symbols],[  
+    PHP_DEBUG=$enableval  
+    ],[ PHP_DEBUG=no  
+    ])  
+fi  
+  
 
   dnl PHP_ADD_EXTENSION_DEP(libevent, sockets, true)
   dnl PHP_SUBST(LIBEVENT_SHARED_LIBADD)
