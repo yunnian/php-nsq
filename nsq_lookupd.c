@@ -37,7 +37,7 @@ void lookupd_init(){
 }
 
 
-void RemoteReadCallback(struct evhttp_request* remote_rsp, void* arg)
+void FinshCallback(struct evhttp_request* remote_rsp, void* arg)
 {
     //printf("dddddd%s",arg);
     result * re = arg;
@@ -53,25 +53,13 @@ void RemoteReadCallback(struct evhttp_request* remote_rsp, void* arg)
 } 
 
 
-
-void ReadChunkCallback(struct evhttp_request* remote_rsp, void* arg)
-{
-    char buf[4096];
-    struct evbuffer* evbuf = evhttp_request_get_input_buffer(remote_rsp);
-    int n = 0;
-    while ((n = evbuffer_remove(evbuf, buf, 4096)) > 0)
-    {
-        fwrite(buf, n, 1, stdout);
-    }
-}
-
-void RemoteRequestErrorCallback(enum evhttp_request_error error, void* arg)
+void RequestErrorCallback(enum evhttp_request_error error, void* arg)
 {
     fprintf(stderr, "request failed\n");
     event_base_loopexit((struct event_base*)arg, NULL);
 }
 
-void RemoteConnectionCloseCallback(struct evhttp_connection* connection, void* arg)
+void ConnectionCloseCallback(struct evhttp_connection* connection, void* arg)
 {
     fprintf(stderr, "remote connection closed\n");
     event_base_loopexit((struct event_base*)arg, NULL);
@@ -123,10 +111,8 @@ char* request(char* url)
 
     result * re = emalloc(sizeof(re));
     re->base = base;
-    struct evhttp_request* request = evhttp_request_new(RemoteReadCallback, re);
-    //evhttp_request_set_header_cb(request, ReadHeaderDoneCallback);
-    evhttp_request_set_chunked_cb(request, ReadChunkCallback);
-    evhttp_request_set_error_cb(request, RemoteRequestErrorCallback);
+    struct evhttp_request* request = evhttp_request_new(FinshCallback, re);
+    evhttp_request_set_error_cb(request, RequestErrorCallback);
 
     const char* host = evhttp_uri_get_host(uri);
     if (!host)
@@ -147,8 +133,6 @@ char* request(char* url)
         request_url = "/";
     }
 
-    //printf("url:%s host:%s port:%d path:%s request_url:%s\n", url, host, port, path, request_url);
-
     struct evhttp_connection* connection =  evhttp_connection_base_new(base, dnsbase, host, port);
     if (!connection)
     {
@@ -157,7 +141,7 @@ char* request(char* url)
         return msg;
     }
 
-    evhttp_connection_set_closecb(connection, RemoteConnectionCloseCallback, base);
+    evhttp_connection_set_closecb(connection, ConnectionCloseCallback, base);
 
     evhttp_add_header(evhttp_request_get_output_headers(request), "Host", host);
     evhttp_make_request(connection, request, EVHTTP_REQ_GET, request_url);
