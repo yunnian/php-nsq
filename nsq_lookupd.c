@@ -15,6 +15,13 @@
 #include <sys/queue.h>
 #include <event.h>
 
+typedef struct 
+{
+  struct event_base * base;
+  char *result;
+}result;
+
+
 static zend_class_entry *nsq_lookupd_ce;
 
 static const zend_function_entry nsq_lookupd_functions[] = {
@@ -30,11 +37,21 @@ void lookupd_init(){
 }
 
 
-
 void RemoteReadCallback(struct evhttp_request* remote_rsp, void* arg)
 {
-    event_base_loopexit((struct event_base*)arg, NULL);
+    //printf("dddddd%s",arg);
+    result * re = arg;
+    const int code = remote_rsp  ?  evhttp_request_get_response_code (remote_rsp)  :  0;
+    printf("code:%d",code);
+	struct evbuffer *buf = evhttp_request_get_input_buffer(remote_rsp);
+    evbuffer_add (buf, "", 1);    /* NUL-terminate the buffer */
+    char *payload = (char *) evbuffer_pullup(buf, -1);
+    re->result = strdup(payload);
+    printf("ssss:%s",(re->result));
+    event_base_loopbreak(re->base);
+    //event_base_loopexit((struct event_base*)arg, NULL);
 } 
+
 
 
 void ReadChunkCallback(struct evhttp_request* remote_rsp, void* arg)
@@ -104,7 +121,9 @@ char* request(char* url)
     }
     assert(dnsbase);
 
-    struct evhttp_request* request = evhttp_request_new(RemoteReadCallback, base);
+    result * re = emalloc(sizeof(re));
+    re->base = base;
+    struct evhttp_request* request = evhttp_request_new(RemoteReadCallback, re);
     //evhttp_request_set_header_cb(request, ReadHeaderDoneCallback);
     evhttp_request_set_chunked_cb(request, ReadChunkCallback);
     evhttp_request_set_error_cb(request, RemoteRequestErrorCallback);
@@ -144,13 +163,5 @@ char* request(char* url)
     evhttp_make_request(connection, request, EVHTTP_REQ_GET, request_url);
 
     event_base_dispatch(base);
-
-    char *buf = malloc(4096*sizeof(char));
-    struct evbuffer* evbuf = evhttp_request_get_input_buffer(request);
-    int n = 0;
-    while ((n = evbuffer_remove(evbuf, buf, 4096)) > 0)
-    {
-        fwrite(buf, n, 1, stdout);
-    }
-    return buf;
+    return re->result;
 }
