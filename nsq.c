@@ -72,6 +72,7 @@ PHP_METHOD(Nsq,subscribe)
 	zval retval;
 	zval params[1];
     zval *class_lookupd;
+    zval *lookupd_addr,rv3;
 
 	ZEND_PARSE_PARAMETERS_START(3,3)
         Z_PARAM_OBJECT(class_lookupd)
@@ -88,7 +89,14 @@ PHP_METHOD(Nsq,subscribe)
 	fci.retval = &retval;
     php_var_dump(config, 1);
     //zval_dtor(config);
-    zval_dtor(params);
+
+    //server_values = zend_hash_find(Z_ARRVAL_P(return_value), server_key);
+    //lookupd_addr = zend_read_property(Z_OBJCE_P(class_lookupd), getThis(), "address", sizeof("address")-1, 1, &rv3);
+
+    //:php_var_dump(lookupd_addr, 1);
+    char * test = lookup("127.0.0.1:4161","test");
+	//printf("nihao:%s",test);
+
 	
     // json 解析
     //zval  test;
@@ -99,6 +107,8 @@ PHP_METHOD(Nsq,subscribe)
 
 
 	zend_call_function(&fci, &fcc TSRMLS_CC);
+    efree(test);
+    zval_dtor(params);
 
 	//RETURN_STR(strg);
     //add_index_zval(return_value,333,config);
@@ -154,8 +164,6 @@ PHP_MINIT_FUNCTION(nsq)
 	REGISTER_INI_ENTRIES();
 	*/
     lookupd_init();
-    char * test = lookup("127.0.0.1:4161","test");
-	printf("nihao:%s",test);
     //conifg_init();
 
 	return SUCCESS;

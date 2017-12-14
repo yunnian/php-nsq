@@ -1,7 +1,15 @@
 <?php 
-$nsq_lookupd = new NsqLookupd();
+
+
+$nsq_lookupd = new NsqLookupd("127.0.0.01:4161");
 $nsq = new Nsq();
-$config = ["topic"=>"test","channel"=>"struggle"];
+$config = [
+
+    "topic"=>"test",
+    "channel"=>"struggle",
+    "rdy" => 10
+
+    ];
 function nihao($msg){
    echo "msg:".$msg; 
 

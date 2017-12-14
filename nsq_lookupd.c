@@ -36,6 +36,16 @@ void lookupd_init(){
     zend_declare_property_null(nsq_lookupd_ce,ZEND_STRL("address"),ZEND_ACC_PUBLIC TSRMLS_CC);
 }
 
+PHP_METHOD(NsqLookupd, __construct){
+    zval *self;
+    zval *address;
+    self = getThis();
+
+	ZEND_PARSE_PARAMETERS_START(1,1)
+        Z_PARAM_ZVAL(address)
+	ZEND_PARSE_PARAMETERS_END();
+    zend_update_property(Z_OBJCE_P(self),self,ZEND_STRL("address"),address TSRMLS_CC);
+}
 
 void FinshCallback(struct evhttp_request* remote_rsp, void* arg)
 {
