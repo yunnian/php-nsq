@@ -66,7 +66,6 @@ PHP_METHOD(Nsq,subscribe)
 	char *arg = NULL;
     struct event_base *base = event_base_new();  
 	zend_string *strg;
-	zend_string *msg;
 	zend_fcall_info  fci;
 	zend_fcall_info_cache fcc;
 	zval *config;
@@ -83,10 +82,13 @@ PHP_METHOD(Nsq,subscribe)
 	strg = strpprintf(0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "nsq", arg);
 
 	ZVAL_STR_COPY(&params[0], strg);  
+    zend_string_release(strg);
 	fci.params = params;
 	fci.param_count = 1;
 	fci.retval = &retval;
     php_var_dump(config, 1);
+    //zval_dtor(config);
+    zval_dtor(params);
 	
     // json 解析
     //zval  test;

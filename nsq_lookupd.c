@@ -83,7 +83,7 @@ char* lookup(char *host, char* topic){
 char* request(char* url)
 {
     printf("url:%s",url);
-    char * msg = emalloc(120) ;
+    char * msg ;
     struct evhttp_uri* uri = evhttp_uri_parse(url);
     if (!uri)
     {
@@ -109,7 +109,7 @@ char* request(char* url)
     }
     assert(dnsbase);
 
-    result * re = emalloc(sizeof(re));
+    result * re ;
     re->base = base;
     struct evhttp_request* request = evhttp_request_new(FinshCallback, re);
     evhttp_request_set_error_cb(request, RequestErrorCallback);
