@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <sys/queue.h>
 #include <event.h>
+#include "ext/standard/php_var.h"
 
 typedef struct 
 {
@@ -22,9 +23,14 @@ typedef struct
 }result;
 
 
+ZEND_BEGIN_ARG_INFO_EX(ctor, 0, 0, 1)
+    ZEND_ARG_INFO(0, address)
+ZEND_END_ARG_INFO()
+static PHP_METHOD(NsqLookupd, __construct);
 static zend_class_entry *nsq_lookupd_ce;
 
 static const zend_function_entry nsq_lookupd_functions[] = {
+    PHP_ME(NsqLookupd, __construct, ctor, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_FE_END	/* Must be the last line in nsq_functions[] */
 
 };
@@ -40,10 +46,10 @@ PHP_METHOD(NsqLookupd, __construct){
     zval *self;
     zval *address;
     self = getThis();
-
 	ZEND_PARSE_PARAMETERS_START(1,1)
         Z_PARAM_ZVAL(address)
 	ZEND_PARSE_PARAMETERS_END();
+    php_var_dump(address,1);
     zend_update_property(Z_OBJCE_P(self),self,ZEND_STRL("address"),address TSRMLS_CC);
 }
 
@@ -76,13 +82,14 @@ void ConnectionCloseCallback(struct evhttp_connection* connection, void* arg)
 }
 
 char* lookup(char *host, char* topic){
+    printf("host:%s",host);
     char * url = emalloc(sizeof(host) + sizeof(topic) + 20);
-    sprintf(url, "%s%s", host, "lookupd", "\n");
     if(strstr(url,"http://")){
         sprintf(url, "%s%s%s", host, "/lookup?topic=", topic);
     }else{
         sprintf(url, "%s%s%s%s", "http://", host, "/lookup?topic=", topic); 
     }
+    printf("url:%s",url);
     char *data =  request(url);
     printf("data:%s",data);
 	efree(url);
@@ -119,9 +126,9 @@ char* request(char* url)
     }
     assert(dnsbase);
 
-    result * re ;
-    re->base = base;
-    struct evhttp_request* request = evhttp_request_new(FinshCallback, re);
+    result  re;
+    re.base = base;
+    struct evhttp_request* request = evhttp_request_new(FinshCallback, &re);
     evhttp_request_set_error_cb(request, RequestErrorCallback);
 
     const char* host = evhttp_uri_get_host(uri);
@@ -157,5 +164,5 @@ char* request(char* url)
     evhttp_make_request(connection, request, EVHTTP_REQ_GET, request_url);
 
     event_base_dispatch(base);
-    return re->result;
+    return re.result;
 }

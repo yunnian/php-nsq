@@ -65,14 +65,14 @@ PHP_METHOD(Nsq,subscribe)
 {
 	char *arg = NULL;
     struct event_base *base = event_base_new();  
-	zend_string *strg;
+	zend_string *msg;
 	zend_fcall_info  fci;
 	zend_fcall_info_cache fcc;
 	zval *config;
 	zval retval;
 	zval params[1];
     zval *class_lookupd;
-    zval *lookupd_addr,rv3;
+    zval *lookupd_addr,rv3,lookupd_re;
 
 	ZEND_PARSE_PARAMETERS_START(3,3)
         Z_PARAM_OBJECT(class_lookupd)
@@ -80,10 +80,24 @@ PHP_METHOD(Nsq,subscribe)
 		Z_PARAM_FUNC(fci, fcc)
 	ZEND_PARSE_PARAMETERS_END();
 
-	strg = strpprintf(0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "nsq", arg);
 
-	ZVAL_STR_COPY(&params[0], strg);  
-    zend_string_release(strg);
+    lookupd_addr = zend_read_property(Z_OBJCE_P(class_lookupd), class_lookupd, "address", sizeof("address")-1, 1, &rv3);
+
+    zval * topic = zend_hash_str_find(Z_ARRVAL_P(config),"topic",sizeof("topic")-1);
+    printf("----------------------------\n");
+    char * lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
+
+
+    printf("----------------------------\n");
+    printf("length:%d",strlen(lookupd_re_str));
+    php_json_decode(&lookupd_re, lookupd_re_str, sizeof(lookupd_re_str)-1,1,PHP_JSON_PARSER_DEFAULT_DEPTH);
+    php_var_dump(&lookupd_re,1);
+    printf("----------------------------\n");
+
+	msg = strpprintf(0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "nsq", arg);
+
+	ZVAL_STR_COPY(&params[0], msg);  
+    zend_string_release(msg);
 	fci.params = params;
 	fci.param_count = 1;
 	fci.retval = &retval;
@@ -91,10 +105,6 @@ PHP_METHOD(Nsq,subscribe)
     //zval_dtor(config);
 
     //server_values = zend_hash_find(Z_ARRVAL_P(return_value), server_key);
-    //lookupd_addr = zend_read_property(Z_OBJCE_P(class_lookupd), getThis(), "address", sizeof("address")-1, 1, &rv3);
-
-    //:php_var_dump(lookupd_addr, 1);
-    char * test = lookup("127.0.0.1:4161","test");
 	//printf("nihao:%s",test);
 
 	
@@ -103,12 +113,13 @@ PHP_METHOD(Nsq,subscribe)
     //char * s = "{\"message\":\"NOT_FOUND\"}";
     //php_json_decode(&test, s, strlen(s),1,2);
     //zend_array *arr = test.value.arr;
-    //php_var_dump(&test, 1);
+    //php_var_dump(test, 1);
 
 
 	zend_call_function(&fci, &fcc TSRMLS_CC);
-    efree(test);
+    //free(test);
     zval_dtor(params);
+    zval_dtor(&lookupd_re);
 
 	//RETURN_STR(strg);
     //add_index_zval(return_value,333,config);

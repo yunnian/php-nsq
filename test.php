@@ -1,7 +1,7 @@
 <?php 
 
 
-$nsq_lookupd = new NsqLookupd("127.0.0.01:4161");
+$nsq_lookupd = new NsqLookupd("127.0.0.1:4161");
 $nsq = new Nsq();
 $config = [
 
