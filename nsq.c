@@ -34,6 +34,8 @@
 #include <event2/util.h>  
 #include <event2/event.h>  
 
+#include <sub.h>  
+
 
 /* If you declare any globals in php_nsq.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(nsq)
@@ -61,6 +63,11 @@ PHP_INI_END()
    Return a string to confirm that the module is compiled in */
 zend_class_entry *nsq_ce;
 
+int msg_callback_m(NSQMsg *msg){
+
+    printf("test message handler:%s\n", msg->body);
+    return 0;
+}
 PHP_METHOD(Nsq,subscribe)
 {
 	char *arg = NULL;
@@ -91,7 +98,31 @@ PHP_METHOD(Nsq,subscribe)
     printf("----------------------------\n");
     printf("length:%d",strlen(lookupd_re_str));
     php_json_decode(&lookupd_re, lookupd_re_str, sizeof(lookupd_re_str)-1,1,PHP_JSON_PARSER_DEFAULT_DEPTH);
-    php_var_dump(&lookupd_re,1);
+    zval * producers = zend_hash_str_find(Z_ARRVAL(lookupd_re),"producers",sizeof("producers")-1);
+
+    // foreach producers  to get nsqd address
+    zval * val;
+
+    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(producers), val) {
+        zval * nsqd_host = zend_hash_str_find(Z_ARRVAL_P(val),"broadcast_address",sizeof("broadcast_address")-1);
+        struct NSQMsg *msg;
+        msg = malloc(sizeof(NSQMsg));
+        msg->topic = "test";
+        msg->channel = "struggle_everyday";
+        msg->rdy = 2;
+        //int (*msg_callback)(struct NSQMsg *msg) = msg_callback_m;
+
+        subscribe("127.0.0.1", "4150", msg, &msg_callback_m); //现在只是 直连nsqd 的地址,lookupd地址支持 以后上
+        //int re = subscribe(sock, msg, msg_callback);
+        //printf("re:%d",re);
+        free(msg);
+
+        
+        
+    } ZEND_HASH_FOREACH_END();
+
+
+
     printf("----------------------------\n");
 
 	msg = strpprintf(0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "nsq", arg);
