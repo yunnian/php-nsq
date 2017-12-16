@@ -68,16 +68,20 @@ int msg_callback_m(NSQMsg *msg){
     printf("test message handler:%s\n", msg->body);
     return 0;
 }
+void* handler(int sig) {
+    int status;
+ 
+    if (waitpid(-1, &status, WNOHANG) >= 0)
+    {
+        printf("child is die,i know\n");
+    }
+}
 PHP_METHOD(Nsq,subscribe)
 {
-	char *arg = NULL;
     struct event_base *base = event_base_new();  
-	zend_string *msg;
 	zend_fcall_info  fci;
 	zend_fcall_info_cache fcc;
 	zval *config;
-	zval retval;
-	zval params[1];
     zval *class_lookupd;
     zval *lookupd_addr,rv3,lookupd_re;
 
@@ -91,49 +95,55 @@ PHP_METHOD(Nsq,subscribe)
     lookupd_addr = zend_read_property(Z_OBJCE_P(class_lookupd), class_lookupd, "address", sizeof("address")-1, 1, &rv3);
 
     zval * topic = zend_hash_str_find(Z_ARRVAL_P(config),"topic",sizeof("topic")-1);
-    printf("----------------------------\n");
+    zval * channel = zend_hash_str_find(Z_ARRVAL_P(config),"channel",sizeof("channel")-1);
+    zval * rdy = zend_hash_str_find(Z_ARRVAL_P(config),"rdy",sizeof("rdy")-1);
+    zval * connect_num  = zend_hash_str_find(Z_ARRVAL_P(config),"connect_num",sizeof("connect_num")-1);
     char * lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
-
-
-    printf("----------------------------\n");
-    printf("length:%d",strlen(lookupd_re_str));
     php_json_decode(&lookupd_re, lookupd_re_str, sizeof(lookupd_re_str)-1,1,PHP_JSON_PARSER_DEFAULT_DEPTH);
     zval * producers = zend_hash_str_find(Z_ARRVAL(lookupd_re),"producers",sizeof("producers")-1);
 
+    printf("connect_num----------:%d",Z_LVAL_P(connect_num));
+        
+        
     // foreach producers  to get nsqd address
     zval * val;
+    pid_t pid, wt;
+    for (int i = 1; i <= Z_LVAL_P(connect_num); i++) {
 
     ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(producers), val) {
-        zval * nsqd_host = zend_hash_str_find(Z_ARRVAL_P(val),"broadcast_address",sizeof("broadcast_address")-1);
-        struct NSQMsg *msg;
-        msg = malloc(sizeof(NSQMsg));
-        msg->topic = "test";
-        msg->channel = "struggle_everyday";
-        msg->rdy = 2;
-        //int (*msg_callback)(struct NSQMsg *msg) = msg_callback_m;
+		//signal(SIGCHLD,handler);
+        pid = fork();
 
-        subscribe("127.0.0.1", "4150", msg, &msg_callback_m); //现在只是 直连nsqd 的地址,lookupd地址支持 以后上
-        //int re = subscribe(sock, msg, msg_callback);
-        //printf("re:%d",re);
-        free(msg);
+        if(pid == 0){
+            zval * nsqd_host = zend_hash_str_find(Z_ARRVAL_P(val),"broadcast_address",sizeof("broadcast_address")-1);
+            zval * nsqd_port = zend_hash_str_find(Z_ARRVAL_P(val),"tcp_port",sizeof("tcp_port")-1);
+            struct NSQMsg *msg;
+            msg = malloc(sizeof(NSQMsg));
+            msg->topic = Z_STRVAL_P(topic);
+            msg->channel = Z_STRVAL_P(channel); 
+            msg->rdy = Z_LVAL_P(rdy);
+            //int (*msg_callback)(struct NSQMsg *msg) = msg_callback_m;
+            printf("host:%s",Z_STRVAL_P(nsqd_host));
+            printf("port:%ld", Z_LVAL_P(nsqd_port));
+            convert_to_string(nsqd_port);
+            printf("port:%s", Z_STRVAL_P(nsqd_port));
+
+            subscribe("127.0.0.1", Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); //现在只是 直连nsqd 的地址,lookupd地址支持 以后上
+
+            //int re = subscribe(sock, msg, msg_callback);
+            //printf("re:%d",re);
+            free(msg);
+        }
 
         
         
     } ZEND_HASH_FOREACH_END();
 
-
-
-    printf("----------------------------\n");
-
-	msg = strpprintf(0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "nsq", arg);
-
-	ZVAL_STR_COPY(&params[0], msg);  
-    zend_string_release(msg);
-	fci.params = params;
-	fci.param_count = 1;
-	fci.retval = &retval;
     php_var_dump(config, 1);
-    //zval_dtor(config);
+    zval_dtor(config);
+    }
+	wt = wait(NULL);
+	printf("nihao yituichu");
 
     //server_values = zend_hash_find(Z_ARRVAL_P(return_value), server_key);
 	//printf("nihao:%s",test);
@@ -147,9 +157,6 @@ PHP_METHOD(Nsq,subscribe)
     //php_var_dump(test, 1);
 
 
-	zend_call_function(&fci, &fcc TSRMLS_CC);
-    //free(test);
-    zval_dtor(params);
     zval_dtor(&lookupd_re);
 
 	//RETURN_STR(strg);

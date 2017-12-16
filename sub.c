@@ -1,3 +1,5 @@
+#include <php.h>
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -52,7 +54,7 @@ uint64_t ntoh64(const uint8_t *data) {
 }
 
 
-int subscribe(const char *address, const char* port,struct NSQMsg *msg, int (*callback)(NSQMsg *msg)){
+int subscribe(const char *address, const char* port,struct NSQMsg *msg, zend_fcall_info *fci, zend_fcall_info_cache *fcc){
     struct sockaddr_in srv;  
     memset(&srv, 0, sizeof(srv));  
     int retry_num = 1;
@@ -75,7 +77,8 @@ int subscribe(const char *address, const char* port,struct NSQMsg *msg, int (*ca
     arg->msg= msg;
     arg->host = address;
     arg->port = port;
-    arg->callback = callback;
+    arg->fci = fci;
+    arg->fcc = fcc;
     bufferevent_setcb(bev, readcb, NULL, conn_eventcb, (void *) arg);  
     int flag=bufferevent_socket_connect(bev, (struct sockaddr *)&srv,sizeof(srv));  
     bufferevent_enable(bev, EV_READ | EV_WRITE);  
@@ -110,7 +113,7 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
     if (events & BEV_EVENT_EOF)  
     {  
         printf("Connection closed ,retrying\n");  
-        //subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, ((NSQArg *)user_data)->callback);
+        //subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, fci, fcc);
     }  
     else if (events & BEV_EVENT_ERROR)  
     {  
@@ -118,7 +121,7 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
         //关闭fd 并更改状态
         sleep(1);
         bufferevent_free(bev);  
-        subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, ((NSQArg *)user_data)->callback);
+		subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, ((NSQArg *)user_data)->fci,((NSQArg *)user_data)->fcc);
     }  
     else if( events & BEV_EVENT_CONNECTED)  
     {  
@@ -136,7 +139,8 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
         //n = sprintf(b, "%s", msg2);
         //send(sock, b,strlen(msg2) ,0);
         bufferevent_write(bev, b, strlen(b));  
-        char * rd =  "RDY 2\n";
+        char  rd[8];
+        sprintf(rd, "RDY %d\n", msg->rdy);
         //send(sock, rd,strlen(rd) ,0);
         //客户端链接成功后
         bufferevent_write(bev, rd, strlen(rd));  
@@ -147,8 +151,10 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
 }  
 
 void readcb(struct bufferevent *bev,void *arg){
+	
     struct NSQMsg *msg = ((struct NSQArg *)arg)->msg;
-    int (* callback)(NSQMsg *msg) = ((struct NSQArg *)arg)->callback;
+	zend_fcall_info  *fci = ((struct NSQArg *)arg)->fci;;
+	zend_fcall_info_cache *fcc = ((struct NSQArg *)arg)->fcc;
     /*
        struct evbuffer *input, *output;  
        char *request_line;  
@@ -204,7 +210,19 @@ void readcb(struct bufferevent *bev,void *arg){
                 //send(sock,rd,strlen(rd) ,0);  
                 //char * rd =  "RDY 2\n";
                 //bufferevent_write(bev,rd, strlen(rd));  
-                callback(msg);
+                zval retval;
+                zval params[1];
+                printf("body len:%d",sizeof(msg->body));
+                zend_string * body =  zend_string_init(msg->body, msg->size -30, 0);
+
+                ZVAL_STR_COPY(&params[0], body);  
+                zend_string_release(body);
+                fci->params = params;
+                fci->param_count = 1;
+                fci->retval = &retval;
+                zend_call_function(fci, fcc TSRMLS_CC);
+                zval_dtor(params);
+
                 free(msg->body);
             }
             free(message);

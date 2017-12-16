@@ -22,9 +22,11 @@ typedef struct NSQArg{
     NSQMsg *msg;
     const char * host;
     const char * port;
-    int (*callback)(NSQMsg *msg);
+	zend_fcall_info  *fci;
+	zend_fcall_info_cache *fcc;
+	
 }NSQArg;
 //param is the nsqlookeupd's ip and port ,return the socket fd
-int subscribe(const char *address, const char * port, struct NSQMsg *msg, int (*callback)(struct NSQMsg *msg));
+int subscribe(const char *address, const char * port, struct NSQMsg *msg, zend_fcall_info *fci, zend_fcall_info_cache *fcc);
 
 #endif //STRUGGLE_NSQ_SUB_CLIENT_H
