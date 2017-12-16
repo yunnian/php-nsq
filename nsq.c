@@ -68,14 +68,6 @@ int msg_callback_m(NSQMsg *msg){
     printf("test message handler:%s\n", msg->body);
     return 0;
 }
-void* handler(int sig) {
-    int status;
- 
-    if (waitpid(-1, &status, WNOHANG) >= 0)
-    {
-        printf("child is die,i know\n");
-    }
-}
 PHP_METHOD(Nsq,subscribe)
 {
     struct event_base *base = event_base_new();  
@@ -102,65 +94,35 @@ PHP_METHOD(Nsq,subscribe)
     php_json_decode(&lookupd_re, lookupd_re_str, sizeof(lookupd_re_str)-1,1,PHP_JSON_PARSER_DEFAULT_DEPTH);
     zval * producers = zend_hash_str_find(Z_ARRVAL(lookupd_re),"producers",sizeof("producers")-1);
 
-    printf("connect_num----------:%d",Z_LVAL_P(connect_num));
-        
-        
     // foreach producers  to get nsqd address
     zval * val;
     pid_t pid, wt;
     for (int i = 1; i <= Z_LVAL_P(connect_num); i++) {
 
-    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(producers), val) {
-		//signal(SIGCHLD,handler);
-        pid = fork();
+        ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(producers), val) {
+            //signal(SIGCHLD,handler);
+            pid = fork();
 
-        if(pid == 0){
-            zval * nsqd_host = zend_hash_str_find(Z_ARRVAL_P(val),"broadcast_address",sizeof("broadcast_address")-1);
-            zval * nsqd_port = zend_hash_str_find(Z_ARRVAL_P(val),"tcp_port",sizeof("tcp_port")-1);
-            struct NSQMsg *msg;
-            msg = malloc(sizeof(NSQMsg));
-            msg->topic = Z_STRVAL_P(topic);
-            msg->channel = Z_STRVAL_P(channel); 
-            msg->rdy = Z_LVAL_P(rdy);
-            //int (*msg_callback)(struct NSQMsg *msg) = msg_callback_m;
-            printf("host:%s",Z_STRVAL_P(nsqd_host));
-            printf("port:%ld", Z_LVAL_P(nsqd_port));
-            convert_to_string(nsqd_port);
-            printf("port:%s", Z_STRVAL_P(nsqd_port));
+            if(pid == 0){
+                zval * nsqd_host = zend_hash_str_find(Z_ARRVAL_P(val),"broadcast_address",sizeof("broadcast_address")-1);
+                zval * nsqd_port = zend_hash_str_find(Z_ARRVAL_P(val),"tcp_port",sizeof("tcp_port")-1);
+                struct NSQMsg *msg;
+                msg = malloc(sizeof(NSQMsg));
+                msg->topic = Z_STRVAL_P(topic);
+                msg->channel = Z_STRVAL_P(channel); 
+                msg->rdy = Z_LVAL_P(rdy);
+                convert_to_string(nsqd_port);
 
-            subscribe("127.0.0.1", Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); //现在只是 直连nsqd 的地址,lookupd地址支持 以后上
+                subscribe("127.0.0.1", Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); 
+                free(msg);
+            }
 
-            //int re = subscribe(sock, msg, msg_callback);
-            //printf("re:%d",re);
-            free(msg);
-        }
+        } ZEND_HASH_FOREACH_END();
 
-        
-        
-    } ZEND_HASH_FOREACH_END();
-
-    php_var_dump(config, 1);
-    zval_dtor(config);
+        zval_dtor(config);
     }
 	wt = wait(NULL);
-	printf("nihao yituichu");
-
-    //server_values = zend_hash_find(Z_ARRVAL_P(return_value), server_key);
-	//printf("nihao:%s",test);
-
-	
-    // json 解析
-    //zval  test;
-    //char * s = "{\"message\":\"NOT_FOUND\"}";
-    //php_json_decode(&test, s, strlen(s),1,2);
-    //zend_array *arr = test.value.arr;
-    //php_var_dump(test, 1);
-
-
     zval_dtor(&lookupd_re);
-
-	//RETURN_STR(strg);
-    //add_index_zval(return_value,333,config);
 }
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and

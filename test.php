@@ -1,6 +1,7 @@
 <?php 
 
-$nsq_lookupd = new NsqLookupd("127.0.0.1:4161");
+//sub
+$nsq_lookupd = new NsqLookupd("127.0.0.1:4161"); //the nsqlookupd tcp addr
 $nsq = new Nsq();
 $config = array(
     "topic"=>"test",

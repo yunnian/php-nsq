@@ -134,15 +134,12 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
         free(v);
         char b[120];
         size_t n;
-        //char * msg2 ="SUB test Struggle ZhenyudeMacBook-Pro ZhenyudeMacBook-Pro.local\n";
         n = sprintf(b, "SUB %s %s%s", msg->topic, msg->channel, "\n");
         //n = sprintf(b, "%s", msg2);
         //send(sock, b,strlen(msg2) ,0);
         bufferevent_write(bev, b, strlen(b));  
         char  rd[8];
         sprintf(rd, "RDY %d\n", msg->rdy);
-        //send(sock, rd,strlen(rd) ,0);
-        //客户端链接成功后
         bufferevent_write(bev, rd, strlen(rd));  
         return ;  
     }  
@@ -155,21 +152,12 @@ void readcb(struct bufferevent *bev,void *arg){
     struct NSQMsg *msg = ((struct NSQArg *)arg)->msg;
 	zend_fcall_info  *fci = ((struct NSQArg *)arg)->fci;;
 	zend_fcall_info_cache *fcc = ((struct NSQArg *)arg)->fcc;
-    /*
-       struct evbuffer *input, *output;  
-       char *request_line;  
-       size_t len;  
-       input = bufferevent_get_input(bev);//其实就是取出bufferevent中的input  
-       output = bufferevent_get_output(bev);//其实就是取出bufferevent中的output  
-     */
     errno = 0;
     int i = 0;
     while(1){
 
-        //读取msg长度
         char * msg_size = malloc(4);
         memset(msg_size,0x00,4);
-        //int size_l =  read(sock, msg_size, 4);
         size_t size_l = bufferevent_read(bev, msg_size, 4); 
         readI32((const unsigned char *) msg_size ,  &msg->size);
 
@@ -180,8 +168,8 @@ void readcb(struct bufferevent *bev,void *arg){
         int l =  bufferevent_read(bev, message, msg->size);
         if (errno) {
             printf("errno = %d\n", errno); // errno = 33
-            perror("sqrt failed"); // sqrt failed: Numerical argument out of domain
-            printf("error: %s\n", strerror(errno)); // error: Numerical argument out of domain
+            perror("sqrt failed"); 
+            printf("error: %s\n", strerror(errno)); 
         }
         if(l){
             msg->message_id = (char * )malloc(17);
@@ -212,7 +200,6 @@ void readcb(struct bufferevent *bev,void *arg){
                 //bufferevent_write(bev,rd, strlen(rd));  
                 zval retval;
                 zval params[1];
-                printf("body len:%d",sizeof(msg->body));
                 zend_string * body =  zend_string_init(msg->body, msg->size -30, 0);
 
                 ZVAL_STR_COPY(&params[0], body);  
@@ -233,7 +220,6 @@ void readcb(struct bufferevent *bev,void *arg){
 
         }
 
-
         if (l == -1) {
             error_handling("read() error");;
         }
@@ -242,7 +228,6 @@ void readcb(struct bufferevent *bev,void *arg){
     //close(sock);
 
     //return 0;
-
 }
 void conn_writecb(struct bufferevent *bev, void *user_data)  
 {  
