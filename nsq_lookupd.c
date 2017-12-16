@@ -49,7 +49,6 @@ PHP_METHOD(NsqLookupd, __construct){
 	ZEND_PARSE_PARAMETERS_START(1,1)
         Z_PARAM_ZVAL(address)
 	ZEND_PARSE_PARAMETERS_END();
-    php_var_dump(address,1);
     zend_update_property(Z_OBJCE_P(self),self,ZEND_STRL("address"),address TSRMLS_CC);
 }
 
@@ -58,12 +57,10 @@ void FinshCallback(struct evhttp_request* remote_rsp, void* arg)
     //printf("dddddd%s",arg);
     result * re = arg;
     const int code = remote_rsp  ?  evhttp_request_get_response_code (remote_rsp)  :  0;
-    printf("code:%d",code);
 	struct evbuffer *buf = evhttp_request_get_input_buffer(remote_rsp);
     evbuffer_add (buf, "", 1);    /* NUL-terminate the buffer */
     char *payload = (char *) evbuffer_pullup(buf, -1);
     re->result = strdup(payload);
-    printf("ssss:%s",(re->result));
     event_base_loopbreak(re->base);
     //event_base_loopexit((struct event_base*)arg, NULL);
 } 
@@ -82,16 +79,13 @@ void ConnectionCloseCallback(struct evhttp_connection* connection, void* arg)
 }
 
 char* lookup(char *host, char* topic){
-    printf("host:%s",host);
     char * url = emalloc(sizeof(host) + sizeof(topic) + 20);
     if(strstr(url,"http://")){
         sprintf(url, "%s%s%s", host, "/lookup?topic=", topic);
     }else{
         sprintf(url, "%s%s%s%s", "http://", host, "/lookup?topic=", topic); 
     }
-    printf("url:%s",url);
     char *data =  request(url);
-    printf("data:%s",data);
 	efree(url);
     return data;
 
@@ -99,7 +93,6 @@ char* lookup(char *host, char* topic){
 
 char* request(char* url)
 {
-    printf("url:%s",url);
     char * msg ;
     struct evhttp_uri* uri = evhttp_uri_parse(url);
     if (!uri)

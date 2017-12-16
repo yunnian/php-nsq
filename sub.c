@@ -178,7 +178,6 @@ void readcb(struct bufferevent *bev,void *arg){
 
 
             if(msg->frame_type == 0){
-                printf("%s","OK");
                 if(msg->size == 15){
                     //send(sock, "NOP\n",strlen("NOP\n") ,0);
                     bufferevent_write(bev, "NOP\n",strlen("NOP\n"));
