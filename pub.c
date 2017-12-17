@@ -41,8 +41,8 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
         serv_addr.sin_addr.s_addr = inet_addr(connect_config_arr->host);
         serv_addr.sin_port = htons(atoi(connect_config_arr->port));
         if(i < connect_num-1){
-            //efree(connect_config_arr->host);
-            //efree(connect_config_arr->port);
+            efree(connect_config_arr->host);
+            efree(connect_config_arr->port);
             connect_config_arr-- ;
         }
         printf("port-------%hu",serv_addr.sin_port);

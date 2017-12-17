@@ -71,6 +71,80 @@ int msg_callback_m(NSQMsg *msg){
     printf("test message handler:%s\n", msg->body);
     return 0;
 }
+
+PHP_METHOD(Nsq,connect_nsqd)
+{
+	zval *connect_addr_arr;
+    zval * val;
+    zval explode_re;
+
+    zend_string * delim =  zend_string_init(":", sizeof(":")-1, 0);
+	ZEND_PARSE_PARAMETERS_START(1,1)
+        Z_PARAM_ARRAY(connect_addr_arr)
+	ZEND_PARSE_PARAMETERS_END();
+    int count = zend_array_count(Z_ARRVAL_P(connect_addr_arr));
+
+    printf("count:%d",count);
+
+    nsqd_connect_config * connect_config_arr = emalloc(count*sizeof(nsqd_connect_config));
+    memset(connect_config_arr, 0, count * sizeof(nsqd_connect_config));
+    //array_init_size(explode_re, 2);
+    int i =0;
+    zval *host,*port;
+    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(connect_addr_arr), val){
+        array_init(&explode_re);
+        php_explode(delim, Z_STR_P(val), &explode_re, 1);
+        host = zend_hash_index_find(Z_ARRVAL_P(&explode_re), 0);
+        port = zend_hash_index_find(Z_ARRVAL_P(&explode_re), 1);
+        //connect_config_arr->host = Z_STRVAL_P(host); 
+        //connect_config_arr->port = Z_STRVAL_P(port); 
+        connect_config_arr->host = emalloc(Z_STRLEN_P(host)); 
+        connect_config_arr->port = emalloc(Z_STRLEN_P(port)); 
+        strcpy(connect_config_arr->host,Z_STRVAL_P(host));
+        strcpy(connect_config_arr->port,Z_STRVAL_P(port));
+        
+        
+        //Z_STRVAL_P(host);
+        //connect_config_arr->port =  Z_STRVAL_P(port);
+        i++;
+        if(i<count){
+            connect_config_arr++;
+        }
+        zval_dtor(&explode_re);
+    
+    }ZEND_HASH_FOREACH_END();
+    int * sock_arr = connect_nsqd(connect_config_arr, count);
+    zval fds;
+    array_init(&fds);
+    for (int i = 0; i < count; i++) {
+        if(!(sock_arr[i] > 0)){
+            RETURN_FALSE
+        }
+        zval fd_val;
+        ZVAL_LONG(&fd_val, sock_arr[i]);
+        zend_hash_index_add(Z_ARRVAL(fds), i, &fd_val);
+        zval_dtor(&fd_val);
+    }
+
+    zend_update_property(Z_OBJCE_P(getThis()),getThis(),ZEND_STRL("nsqd_connection_fds"), &fds TSRMLS_CC);
+    efree(sock_arr);
+    for (int i = 0; i < count; i++) {
+        efree(connect_config_arr->host);
+        efree(connect_config_arr->port);
+        if(i<count-1){
+            connect_config_arr--;
+        }
+        
+    }
+    efree(connect_config_arr);
+    zend_string_release(delim);
+    zval_dtor(host);
+    zval_dtor(val);
+    zval_dtor(&fds);
+    zval_dtor(port);
+    RETURN_TRUE;
+}
+
 PHP_METHOD(Nsq,publish)
 {
 	zval *connect_arr;
@@ -129,8 +203,8 @@ PHP_METHOD(Nsq,publish)
         
     }
     */
-    zval_dtor(host);
-    zval_dtor(port);
+    //zval_dtor(host);
+    //zval_dtor(port);
     //free(sock_arr);
 
     //efree(connect_config_arr);
@@ -224,6 +298,10 @@ static void php_nsq_init_globals(zend_nsq_globals *nsq_globals)
  *
  * Every user visible function must have an entry in nsq_functions[].
  */
+ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_connect_nsqd, 0, 0, -1)
+    ZEND_ARG_INFO(0, connect_addr_arr)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_subscribe, 0, 0, -1)
     ZEND_ARG_INFO(0, conifg)
     ZEND_ARG_INFO(0, callback)
@@ -237,6 +315,7 @@ ZEND_END_ARG_INFO()
 
 const zend_function_entry nsq_functions[] = {
 	//PHP_FE(subscribe,	NULL)		/* For testing, remove later. */
+    PHP_ME(Nsq, connect_nsqd, arginfo_nsq_connect_nsqd, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
 	PHP_FE_END	/* Must be the last line in nsq_functions[] */
@@ -252,6 +331,7 @@ PHP_MINIT_FUNCTION(nsq)
     zend_class_entry nsq;
     INIT_CLASS_ENTRY(nsq,"Nsq",nsq_functions);
     nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
+    zend_declare_property_null(nsq_ce,ZEND_STRL("nsqd_connection_fds"),ZEND_ACC_PUBLIC TSRMLS_CC);
     //nsq_ce = zend_register_internal_class_ex(&nsq,NULL,NULL TSRMLS_CC);
     //zend_declare_property_null(person_ce,ZEND_STRL("address"),ZEND_ACC_PUBLIC TSRMLS_CC);
     
