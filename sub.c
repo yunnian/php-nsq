@@ -1,13 +1,12 @@
-#include <php.h>
-
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
+#include "php.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <errno.h>
-#include<unistd.h>
+#include <unistd.h>
 #include <inttypes.h>
-#include<arpa/inet.h>
-#include<sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 #include"sub.h"
 #include <time.h>  
 #include <event2/bufferevent.h>  
@@ -21,13 +20,8 @@ const int BUFFER_SIZE = 1024;
 void conn_writecb(struct bufferevent *, void *);  
 void readcb(struct bufferevent *, void *msg);  
 void conn_eventcb(struct bufferevent *, short, void *);  
-void error_handling(char* message);
+extern void error_handling(char* message);
 
-void error_handling(char* message) {
-    fputs(message, stderr);
-    fputc('\n', stderr);
-    //exit(1);
-}
 int readI16(const unsigned char * pData, uint16_t *pValue)
 {
     *pValue = (pData[0] << 8) | pData[1];

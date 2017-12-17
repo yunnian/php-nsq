@@ -38,8 +38,13 @@ extern zend_module_entry nsq_module_entry;
 #include "TSRM.h"
 #endif
 
-void lookupd_init();
-char* lookup();
+void error_handling(char* message);
+void error_handling(char* message) {
+    fputs(message, stderr);
+    fputc('\n', stderr);
+    //exit(1);
+}
+
 
 /*
   	Declare any global variables you may need between the BEGIN

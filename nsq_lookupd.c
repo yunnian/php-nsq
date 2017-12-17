@@ -1,5 +1,4 @@
 #include <php.h>
-#include "php_nsq.h"
 #include "nsq_lookupd.h"
 
 #include "event2/http.h"
@@ -15,6 +14,8 @@
 #include <sys/queue.h>
 #include <event.h>
 #include "ext/standard/php_var.h"
+#include "nsq_lookupd.h"
+extern void error_handling(char* message) ;
 
 typedef struct 
 {

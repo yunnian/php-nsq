@@ -63,7 +63,6 @@ echo "libevent-path:$LIBEVENT_DIR";
     AC_MSG_ERROR([wrong libevent version {1.4.+ is required} or lib not found])
   ],[
     dnl -L$LIBEVENT_DIR/$PHP_LIBDIR 
-    echo "sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfs"
     -l$LIBNAME 
   ])
 
@@ -112,5 +111,5 @@ echo "libevent-path:$LIBEVENT_DIR";
   dnl
   PHP_SUBST(NSQ_SHARED_LIBADD)
 
-  PHP_NEW_EXTENSION(nsq, nsq.c nsq_lookupd.c sub.c, $ext_shared,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
+  PHP_NEW_EXTENSION(nsq, nsq.c pub.c nsq_lookupd.c sub.c , $ext_shared)
 fi

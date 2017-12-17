@@ -32,9 +32,12 @@
 #include <event2/buffer.h>  
 #include <event2/listener.h>  
 #include <event2/util.h>  
-#include <event2/event.h>  
+#include <event2/event.h>
 
-#include <sub.h>  
+#include "ext/standard/php_string.h"
+#include <sub.h> 
+#include "pub.h"  
+#include "nsq_lookupd.h"  
 
 
 /* If you declare any globals in php_nsq.h uncomment this:
@@ -68,6 +71,80 @@ int msg_callback_m(NSQMsg *msg){
     printf("test message handler:%s\n", msg->body);
     return 0;
 }
+PHP_METHOD(Nsq,publish)
+{
+	zval *connect_arr;
+    zval *topic;
+    zval *msg;
+    zval * val;
+    zval explode_re;
+
+    zend_string * delim =  zend_string_init(":", sizeof(":")-1, 0);
+	ZEND_PARSE_PARAMETERS_START(3,3)
+        Z_PARAM_ARRAY(connect_arr)
+        Z_PARAM_ZVAL(topic)
+        Z_PARAM_ZVAL(msg)
+	ZEND_PARSE_PARAMETERS_END();
+    int count = zend_array_count(Z_ARRVAL_P(connect_arr));
+
+    printf("count:%d",count);
+
+    nsqd_connect_config * connect_config_arr = emalloc(count*sizeof(nsqd_connect_config));
+    memset(connect_config_arr, 0, count * sizeof(nsqd_connect_config));
+    //array_init_size(explode_re, 2);
+    int i =0;
+    zval *host,*port;
+    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(connect_arr), val){
+        array_init(&explode_re);
+        php_explode(delim, Z_STR_P(val), &explode_re, 1);
+        host = zend_hash_index_find(Z_ARRVAL_P(&explode_re), 0);
+        port = zend_hash_index_find(Z_ARRVAL_P(&explode_re), 1);
+        //connect_config_arr->host = Z_STRVAL_P(host); 
+        //connect_config_arr->port = Z_STRVAL_P(port); 
+        connect_config_arr->host = emalloc(Z_STRLEN_P(host)); 
+        connect_config_arr->port = emalloc(Z_STRLEN_P(port)); 
+        strcpy(connect_config_arr->host,Z_STRVAL_P(host));
+        strcpy(connect_config_arr->port,Z_STRVAL_P(port));
+        
+        
+        //Z_STRVAL_P(host);
+        //connect_config_arr->port =  Z_STRVAL_P(port);
+        i++;
+        if(i<count){
+            connect_config_arr++;
+        }
+        zval_dtor(&explode_re);
+    
+    }ZEND_HASH_FOREACH_END();
+    int * sock_arr = connect_nsqd(connect_config_arr, count);
+    int r = rand() % count;
+    //printf("sock_arr:%d\n",sock_arr[r]);
+    int re = publish(sock_arr[r], Z_STRVAL_P(topic), Z_STRVAL_P(msg));
+    /*
+    for (int i = 0; i < count; i++) {
+        efree(connect_config_arr->host);
+        efree(connect_config_arr->port);
+        
+        connect_config_arr++; 
+        
+    }
+    */
+    zval_dtor(host);
+    zval_dtor(port);
+    //free(sock_arr);
+
+    //efree(connect_config_arr);
+    //zval_dtor(explode_re);
+    //zval_dtor(topic);
+    //zval_dtor(msg);
+    //zval_dtor(connect_arr);
+    //zval_dtor(val);
+    zend_string_release(delim);
+    /*
+
+    */
+}
+
 PHP_METHOD(Nsq,subscribe)
 {
     struct event_base *base = event_base_new();  
@@ -147,13 +224,20 @@ static void php_nsq_init_globals(zend_nsq_globals *nsq_globals)
  *
  * Every user visible function must have an entry in nsq_functions[].
  */
- ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_subscribe, 0, 0, -1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_subscribe, 0, 0, -1)
     ZEND_ARG_INFO(0, conifg)
     ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_publish, 0, 0, -1)
+    ZEND_ARG_INFO(0, sock_arr)
+    ZEND_ARG_INFO(0, topic)
+    ZEND_ARG_INFO(0, channel)
+ZEND_END_ARG_INFO()
+
 const zend_function_entry nsq_functions[] = {
 	//PHP_FE(subscribe,	NULL)		/* For testing, remove later. */
+    PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
 	PHP_FE_END	/* Must be the last line in nsq_functions[] */
 };
@@ -185,6 +269,8 @@ PHP_MINIT_FUNCTION(nsq)
  */
 PHP_MSHUTDOWN_FUNCTION(nsq)
 {
+    //extern int * sock_arr;
+    //efree(sock_arr);
 	/* uncomment this line if you have INI entries
 	UNREGISTER_INI_ENTRIES();
 	*/
