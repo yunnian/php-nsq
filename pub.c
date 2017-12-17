@@ -19,7 +19,6 @@ int ReadI32(const char * pData, int *pValue)
 static int * sock_arr;
 int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
     if(sock_arr){
-        printf("sssssss不为空%d",sock_arr[0]);
         return sock_arr;
     }
 
@@ -33,8 +32,6 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
         if (sock_arr[i] == -1) {
             error_handling("socket() error");
         }
-        printf("sock_arr %d===  :%d\n",i,sock_arr[i]);
-
         
         //设置一个socket地址结构client_addr,代表客户机internet地址, 端口
         serv_addr.sin_family = AF_INET;
@@ -45,7 +42,6 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
             efree(connect_config_arr->port);
             connect_config_arr-- ;
         }
-        printf("port-------%hu",serv_addr.sin_port);
 
         //把socket和socket地址结构联系起来
         if( connect(sock_arr[i],(struct sockaddr*)&serv_addr,sizeof(serv_addr)) == -1) {
@@ -61,7 +57,6 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
 
 
 int publish(int sock, char *topic, char *msg){
-    printf("我的socket文件描述负%d",sock);
 	char buf[1024*1024];
     size_t n;
 	char * pub_command = malloc(strlen(topic) + strlen("PUB \n"));
