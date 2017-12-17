@@ -1,15 +1,13 @@
 <?php 
+//the nsqd tcp addr that you want to publish
 $nsqd_addr = array(
     "127.0.0.1:4150",
     "127.0.0.1:4154"
 );
 
 $nsq = new Nsq();
-$nsq->connect_nsqd($nsqd_addr);
-var_dump($nsq->nsqd_connection_fds);
+$is_true = $nsq->connect_nsqd($nsqd_addr);
 
 for($i=0;$i<20;$i++){
-    $a = $nsq->publish("test", "nihao");
-    var_dump($a);
-
+    $nsq->publish("test", "nihao");
 }
