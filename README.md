@@ -44,8 +44,8 @@ $nsq = new Nsq();
 $config = array(
     "topic" => "test",
     "channel" => "struggle",
-    "rdy" => 2,
-    "connect_num" => 1,   
+    "rdy" => 2,                //optional , default 1
+    "connect_num" => 1,        //optional , default 1
 );
 $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
    echo "msg:".$msg; 

@@ -82,6 +82,7 @@ PHP_METHOD(Nsq,connect_nsqd)
 	ZEND_PARSE_PARAMETERS_START(1,1)
         Z_PARAM_ARRAY(connect_addr_arr)
 	ZEND_PARSE_PARAMETERS_END();
+
     int count = zend_array_count(Z_ARRVAL_P(connect_addr_arr));
     nsqd_connect_config * connect_config_arr = emalloc(count*sizeof(nsqd_connect_config));
     memset(connect_config_arr, 0, count * sizeof(nsqd_connect_config));
@@ -181,7 +182,16 @@ PHP_METHOD(Nsq,subscribe)
     lookupd_addr = zend_read_property(Z_OBJCE_P(class_lookupd), class_lookupd, "address", sizeof("address")-1, 1, &rv3);
 
     zval * topic = zend_hash_str_find(Z_ARRVAL_P(config),"topic",sizeof("topic")-1);
+    if(!topic){
+        php_error_docref(NULL, E_WARNING, "not find topic key");
+        return;
+    }
+
     zval * channel = zend_hash_str_find(Z_ARRVAL_P(config),"channel",sizeof("channel")-1);
+    if(!channel){
+        php_error_docref(NULL, E_WARNING, "not find channel key");
+        return;
+    }
     zval * rdy = zend_hash_str_find(Z_ARRVAL_P(config),"rdy",sizeof("rdy")-1);
     zval * connect_num  = zend_hash_str_find(Z_ARRVAL_P(config),"connect_num",sizeof("connect_num")-1);
     char * lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
@@ -204,7 +214,11 @@ PHP_METHOD(Nsq,subscribe)
                 msg = malloc(sizeof(NSQMsg));
                 msg->topic = Z_STRVAL_P(topic);
                 msg->channel = Z_STRVAL_P(channel); 
-                msg->rdy = Z_LVAL_P(rdy);
+                if(rdy){
+                    msg->rdy = Z_LVAL_P(rdy);
+                }else{
+                    msg->rdy = 1;
+                }
                 convert_to_string(nsqd_port);
 
                 subscribe("127.0.0.1", Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); 
