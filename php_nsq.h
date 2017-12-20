@@ -38,8 +38,9 @@ extern zend_module_entry nsq_module_entry;
 #include "TSRM.h"
 #endif
 
-void error_handling(char* message);
-void error_handling(char* message) {
+void message_init();
+void error_handlings(char* message);
+void error_handlings(char* message) {
     fputs(message, stderr);
     fputc('\n', stderr);
     //exit(1);

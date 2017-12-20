@@ -13,34 +13,32 @@ void nsq_subscribe(struct bufferevent *bev, const char *topic, const char *chann
     bufferevent_write(bev, b, n);  
 }
 
-/*
-void nsq_ready(struct Buffer *buf, int count)
+void nsq_ready(struct bufferevent *bev, int count)
 {
     char b[MAX_BUF_SIZE];
     size_t n;
 
     n = sprintf(b, "RDY %d%s", count, NEW_LINE);
-    buffer_add(buf, b, n);
+    bufferevent_write(bev, b, n);  
 }
 
-void nsq_finish(struct Buffer *buf, const char *id)
+void nsq_finish(struct bufferevent *bev, const char *id)
 {
     char b[MAX_BUF_SIZE];
     size_t n;
 
     n = sprintf(b, "FIN %s%s", id, NEW_LINE);
-    buffer_add(buf, b, n);
+    bufferevent_write(bev, b, n);  
 }
 
 
-void nsq_nop(struct Buffer *buf)
+void nsq_nop(struct bufferevent *bev)
 {
     char b[MAX_BUF_SIZE];
     size_t n;
     n = sprintf(b, "NOP%s", NEW_LINE);
-    buffer_add(buf, b, n);
+    bufferevent_write(bev, b, n);
 }
-*/
 
 void nsq_requeue(struct bufferevent *bev, const char *id, int timeout_ms)
 {

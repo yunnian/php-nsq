@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include "pub.h"
 
-extern void error_handling(char* message) ;
+extern void error_handlings(char* message) ;
 
 int ReadI32(const char * pData, int *pValue)
 {
@@ -30,7 +30,7 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
         //创建用于internet的流协议(TCP)socket
         sock_arr[i] = socket(PF_INET, SOCK_STREAM, 0);
         if (sock_arr[i] == -1) {
-            error_handling("socket() error");
+            error_handlings("socket() error");
         }
         
         //设置一个socket地址结构client_addr,代表客户机internet地址, 端口
@@ -45,7 +45,7 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
 
         //把socket和socket地址结构联系起来
         if( connect(sock_arr[i],(struct sockaddr*)&serv_addr,sizeof(serv_addr)) == -1) {
-            error_handling("connect() error");
+            error_handlings("connect() error");
         }
         char * msgs  = (char * ) malloc(4);
         memcpy(msgs, "  V2", 4);

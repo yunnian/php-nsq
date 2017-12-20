@@ -1,4 +1,5 @@
 #include "php.h"
+#include "zend_API.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,13 +16,15 @@
 #include <event2/event.h>  
 #include"sub.h"
 #include"command.h"
+extern  zend_class_entry *nsq_message_ce;
 
 const int BUFFER_SIZE = 1024;  
+extern void error_handlings(char* message);
 
 void conn_writecb(struct bufferevent *, void *);  
 void readcb(struct bufferevent *, void *msg);  
 void conn_eventcb(struct bufferevent *, short, void *);  
-extern void error_handling(char* message);
+int check_ipaddr(const char *ip);
 
 int readI16(const unsigned char * pData, uint16_t *pValue)
 {
@@ -51,9 +54,20 @@ uint64_t ntoh64(const uint8_t *data) {
 
 int subscribe(const char *address, const char* port,struct NSQMsg *msg, zend_fcall_info *fci, zend_fcall_info_cache *fcc){
     struct sockaddr_in srv;  
+	struct hostent *he;
     memset(&srv, 0, sizeof(srv));  
     int retry_num = 1;
-    srv.sin_addr.s_addr = inet_addr(address);  
+
+	if(check_ipaddr(address)){
+        srv.sin_addr.s_addr = inet_addr(address);  
+    }else{
+        /* resolve hostname */
+        if ( (he = gethostbyname(address) ) == NULL ) {
+            exit(1); /* error */
+        }
+        /* copy the network address to sockaddr_in structure */
+        memcpy(&srv.sin_addr, he->h_addr_list[0], he->h_length);
+    }
     srv.sin_family = AF_INET;  
     srv.sin_port = htons(atoi(port));  
     struct event_base *base = event_base_new();  
@@ -189,25 +203,32 @@ void readcb(struct bufferevent *bev,void *arg){
 
                 zval retval;
                 zval params[1];
-                zend_string * body =  zend_string_init(msg->body, msg->size -30, 0);
 
+                zend_string * body =  zend_string_init(msg->body, msg->size -30, 0);
+                zval *msg_object;
+                zval message_id;
+                zval attempts;
+                zval payload ;
+                zval timestamp ;
+                //zend_string *message_id_str = zend_string_init(msg->message_id,sizeof(msg->message_id),0);
+                //ZVAL_STR_COPY(&message_id, message_id_str);  
+                object_init_ex(msg_object, nsq_message_ce);
+                zend_update_property(nsq_message_ce,msg_object,ZEND_STRL("message_id"), &message_id TSRMLS_CC);
+
+
+                //ZVAL_OBJ(&params[0], Z_OBJ_P(msg_object));  
                 ZVAL_STR_COPY(&params[0], body);  
                 zend_string_release(body);
                 fci->params = params;
                 fci->param_count = 1;
                 fci->retval = &retval;
-                zend_call_function(fci, fcc TSRMLS_CC);
+                if(zend_call_function(fci, fcc TSRMLS_CC) !=SUCCESS){
+                    //delay_time = zend_read_property(nsq_ce, getThis(), "retry_delay_time", sizeof("retry_delay_time")-1, 1, &rv3);
+                    nsq_requeue(bev, msg->message_id, msg->delay_time);
+                }else{
+                    nsq_finish(bev, msg->message_id);
+                }
                 zval_dtor(params);
-
-                nsq_requeue(bev, msg->message_id, 5);
-
-                /*
-                char  ack[22] = "FIN " ;
-                //strcat(ack, messageId);
-                sprintf(ack,"FIN %s\n",msg->message_id);
-                bufferevent_write(bev, ack, strlen(ack));  
-                */
-
                 free(msg->body);
             }
             free(message);
@@ -219,7 +240,7 @@ void readcb(struct bufferevent *bev,void *arg){
         }
 
         if (l == -1) {
-            error_handling("read() error");;
+            //error_handlings("read() error");;
         }
     }
 
@@ -227,6 +248,23 @@ void readcb(struct bufferevent *bev,void *arg){
 
     //return 0;
 }
+int check_ipaddr (const char *str) 
+{
+	if (str == NULL || *str == '\0'){
+		return 0;
+	}
+
+	struct sockaddr_in6 addr6; 
+	struct sockaddr_in addr4; 
+
+	if (1 == inet_pton (AF_INET, str, &addr4.sin_addr)){
+		return 1;
+	} else if (1 == inet_pton (AF_INET6, str, &addr6.sin6_addr)){
+		return 1;
+	}
+	return 0;
+}
+
 void conn_writecb(struct bufferevent *bev, void *user_data)  
 {  
 }  

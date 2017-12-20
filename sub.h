@@ -16,6 +16,7 @@ typedef struct NSQMsg {
     int32_t size;
     char *body;
     int rdy;
+    int delay_time;
 }NSQMsg;
 
 typedef struct NSQArg{

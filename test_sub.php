@@ -10,6 +10,7 @@ $config = array(
     "connect_num" => 1, 
 );
 $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
+var_dump($msg);
    echo "msg:".$msg."\n"; 
 
 });
