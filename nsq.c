@@ -232,6 +232,11 @@ PHP_METHOD(Nsq,subscribe)
 	wt = wait(NULL);
     zval_dtor(&lookupd_re);
 }
+
+/*PHP_METHOD(Nsq,requeue)
+{
+}
+*/
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and
    unfold functions in source code. See the corresponding marks just before

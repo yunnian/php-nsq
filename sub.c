@@ -7,13 +7,14 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include"sub.h"
 #include <time.h>  
 #include <event2/bufferevent.h>  
 #include <event2/buffer.h>  
 #include <event2/listener.h>  
 #include <event2/util.h>  
 #include <event2/event.h>  
+#include"sub.h"
+#include"command.h"
 
 const int BUFFER_SIZE = 1024;  
 
@@ -128,10 +129,12 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
         free(v);
         char b[120];
         size_t n;
-        n = sprintf(b, "SUB %s %s%s", msg->topic, msg->channel, "\n");
+        //n = sprintf(b, "SUB %s %s%s", msg->topic, msg->channel, "\n");
+        //bufferevent_write(bev, b, strlen(b));  
+        nsq_subscribe(bev,msg->topic, msg->channel);
+
         //n = sprintf(b, "%s", msg2);
         //send(sock, b,strlen(msg2) ,0);
-        bufferevent_write(bev, b, strlen(b));  
         char  rd[8];
         sprintf(rd, "RDY %d\n", msg->rdy);
         bufferevent_write(bev, rd, strlen(rd));  
@@ -183,14 +186,7 @@ void readcb(struct bufferevent *bev,void *arg){
                 msg->body = (char * )malloc(msg->size-30+1);
                 memset(msg->body,'\0',msg->size-30+1);
                 memcpy(msg->body,message+30, msg->size-30);
-                char  ack[22] = "FIN " ;
-                //strcat(ack, messageId);
-                sprintf(ack,"FIN %s\n",msg->message_id);
-                //send(sock, ack,strlen(ack) ,0);
-                bufferevent_write(bev, ack, strlen(ack));  
-                //send(sock,rd,strlen(rd) ,0);  
-                //char * rd =  "RDY 2\n";
-                //bufferevent_write(bev,rd, strlen(rd));  
+
                 zval retval;
                 zval params[1];
                 zend_string * body =  zend_string_init(msg->body, msg->size -30, 0);
@@ -202,6 +198,15 @@ void readcb(struct bufferevent *bev,void *arg){
                 fci->retval = &retval;
                 zend_call_function(fci, fcc TSRMLS_CC);
                 zval_dtor(params);
+
+                nsq_requeue(bev, msg->message_id, 5);
+
+                /*
+                char  ack[22] = "FIN " ;
+                //strcat(ack, messageId);
+                sprintf(ack,"FIN %s\n",msg->message_id);
+                bufferevent_write(bev, ack, strlen(ack));  
+                */
 
                 free(msg->body);
             }
