@@ -263,7 +263,7 @@ void readcb(struct bufferevent *bev,void *arg){
         }
 
         if (l == -1) {
-            //error_handlings("read() error");;
+            error_handlings("read() error");;
         }
     }
 
