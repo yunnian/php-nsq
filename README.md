@@ -81,7 +81,11 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 });
 
-2.  if your have strong consuming ability ,you can add you rdy num and connect num
+
+2. if your have strong consuming ability ,you can add you rdy num and connect num
+
+
+3. you can use supervisor to supervise process
 
 
 ```
