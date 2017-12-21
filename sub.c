@@ -141,8 +141,7 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
         //write(sock, v, 4);
         bufferevent_write(bev, v, 4);  
         free(v);
-        char b[120];
-        size_t n;
+
         //n = sprintf(b, "SUB %s %s%s", msg->topic, msg->channel, "\n");
         //bufferevent_write(bev, b, strlen(b));  
         nsq_subscribe(bev,msg->topic, msg->channel);
