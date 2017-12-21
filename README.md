@@ -57,10 +57,11 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 ###### tips :
 
-######     1: requeue/retry:
-           if you whant to retry your mesage when callback have something wrong, just throw any Exception , example:
 
 ```
+1. requeue/retry:
+
+if you whant to retry your mesage when callback have something wrong, just throw any Exception , example:
 
 <?php 
 
@@ -80,7 +81,7 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 });
 
-1 requeue/retry:
+2.  if your have strong consuming ability ,you can add you rdy num and connect num
 
 
 ```
