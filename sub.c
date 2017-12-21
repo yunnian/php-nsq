@@ -54,7 +54,7 @@ uint64_t ntoh64(const uint8_t *data) {
 
 int subscribe(const char *address, const char* port,struct NSQMsg *msg, zend_fcall_info *fci, zend_fcall_info_cache *fcc){
     struct sockaddr_in srv;  
-	struct hostent *he;
+    struct hostent *he;
     memset(&srv, 0, sizeof(srv));  
     int retry_num = 1;
 
