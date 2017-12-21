@@ -38,6 +38,7 @@
 #include <sub.h> 
 #include "pub.h"  
 #include "nsq_lookupd.h"  
+#include "zend_exceptions.h"
 
 
 /* If you declare any globals in php_nsq.h uncomment this:
@@ -64,13 +65,7 @@ PHP_INI_END()
 /* Every user-visible function in PHP should document itself in the source */
 /* {{{ proto string confirm_nsq_compiled(string arg)
    Return a string to confirm that the module is compiled in */
-zend_class_entry *nsq_ce;
-
-int msg_callback_m(NSQMsg *msg){
-
-    printf("test message handler:%s\n", msg->body);
-    return 0;
-}
+zend_class_entry *nsq_ce/*, *nsq_message_exception*/;
 
 PHP_METHOD(Nsq,connect_nsqd)
 {
@@ -86,7 +81,7 @@ PHP_METHOD(Nsq,connect_nsqd)
     int count = zend_array_count(Z_ARRVAL_P(connect_addr_arr));
     nsqd_connect_config * connect_config_arr = emalloc(count*sizeof(nsqd_connect_config));
     memset(connect_config_arr, 0, count * sizeof(nsqd_connect_config));
-    int i =0;
+    int i = 0;
     zval *host,*port;
     ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(connect_addr_arr), val){
         array_init(&explode_re);
@@ -193,6 +188,7 @@ PHP_METHOD(Nsq,subscribe)
         return;
     }
     zval * rdy = zend_hash_str_find(Z_ARRVAL_P(config),"rdy",sizeof("rdy")-1);
+    zval * delay_time = zend_hash_str_find(Z_ARRVAL_P(config),"retry_delay_time",sizeof("retry_delay_time")-1);
     zval * connect_num  = zend_hash_str_find(Z_ARRVAL_P(config),"connect_num",sizeof("connect_num")-1);
     char * lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
     php_json_decode(&lookupd_re, lookupd_re_str, sizeof(lookupd_re_str)-1,1,PHP_JSON_PARSER_DEFAULT_DEPTH);
@@ -219,9 +215,15 @@ PHP_METHOD(Nsq,subscribe)
                 }else{
                     msg->rdy = 1;
                 }
+                if(delay_time){
+                    msg->delay_time = Z_LVAL_P(delay_time);
+                }else{
+                    msg->delay_time = 0;
+                }
                 convert_to_string(nsqd_port);
 
-                subscribe("127.0.0.1", Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); 
+                subscribe(Z_STRVAL_P(nsqd_host), Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); 
+                //subscribe("127.0.0.1", Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); 
                 free(msg);
             }
 
@@ -232,6 +234,13 @@ PHP_METHOD(Nsq,subscribe)
 	wt = wait(NULL);
     zval_dtor(&lookupd_re);
 }
+
+PHP_METHOD(Nsq,requeue)
+{
+    zend_throw_exception(NULL, "the message will be retry", 0);
+    
+}
+
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and
    unfold functions in source code. See the corresponding marks just before
@@ -269,11 +278,16 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_publish, 0, 0, -1)
     ZEND_ARG_INFO(0, msg)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_requeue, 0, 0, -1)
+    ZEND_ARG_INFO(0, delay_time)
+ZEND_END_ARG_INFO()
+
 const zend_function_entry nsq_functions[] = {
 	//PHP_FE(subscribe,	NULL)		/* For testing, remove later. */
     PHP_ME(Nsq, connect_nsqd, arginfo_nsq_connect_nsqd, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
+    PHP_ME(Nsq, requeue, arginfo_nsq_requeue, ZEND_ACC_PUBLIC)
 	PHP_FE_END	/* Must be the last line in nsq_functions[] */
 };
 /* }}} */
@@ -288,14 +302,18 @@ PHP_MINIT_FUNCTION(nsq)
     INIT_CLASS_ENTRY(nsq,"Nsq",nsq_functions);
     nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
     zend_declare_property_null(nsq_ce,ZEND_STRL("nsqd_connection_fds"),ZEND_ACC_PUBLIC TSRMLS_CC);
-    //nsq_ce = zend_register_internal_class_ex(&nsq,NULL,NULL TSRMLS_CC);
-    //zend_declare_property_null(person_ce,ZEND_STRL("address"),ZEND_ACC_PUBLIC TSRMLS_CC);
-    
-	/* If you have INI entries, uncomment these lines
-	REGISTER_INI_ENTRIES();
-	*/
+    //zend_declare_property_long(nsq_ce,ZEND_STRL("retry_delay_time"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+
+
+    /*
+    zend_class_entry message_exception;
+    INIT_CLASS_ENTRY(message_exception,"NsqMessageException",nsq_functions);
+    nsq_message_exception = zend_register_internal_class_ex(&message_exception TSRMLS_CC,zend_ce_exception);
+    zend_declare_property_long(nsq_message_exception,ZEND_STRL("retry_delay_time"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+
+*/
     lookupd_init();
-    //conifg_init();
+    message_init();
 
 	return SUCCESS;
 }
