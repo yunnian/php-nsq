@@ -76,7 +76,11 @@ $config = array(
     "retry_delay_time" => 5000,  //optional, default 0 , after 5000 msec, message will be retried
 );
 $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
+
+
     //do something , error or call something timeout ,you can retry your message:
+
+
     throw new Exception(""); //the message will be retried after 5 seconds
 
 });
