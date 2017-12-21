@@ -6,11 +6,13 @@ $nsq = new Nsq();
 $config = array(
     "topic"=>"test",
     "channel"=>"struggle",
-    "rdy" =>2,
-    "connect_num" => 1, 
+    "rdy" =>10,
+    "connect_num" => 5, 
 );
 $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
-var_dump($msg);
-   echo "msg:".$msg."\n"; 
+    echo $msg->message_id."\n";
+    echo $msg->attempts."\n";
+    echo $msg->payload."\n";
+    echo $msg->timestamp."\n";
 
 });

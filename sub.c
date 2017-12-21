@@ -210,14 +210,31 @@ void readcb(struct bufferevent *bev,void *arg){
                 zval attempts;
                 zval payload ;
                 zval timestamp ;
-                //zend_string *message_id_str = zend_string_init(msg->message_id,sizeof(msg->message_id),0);
-                //ZVAL_STR_COPY(&message_id, message_id_str);  
+
+                do{msg_object = (zval *)emalloc(sizeof(msg_object)); bzero(msg_object, sizeof(zval));}while(0);
                 object_init_ex(msg_object, nsq_message_ce);
+
+                //message_id
+                zend_string *message_id_str = zend_string_init(msg->message_id, 16, 0);
+                ZVAL_STR_COPY(&message_id, message_id_str);  
                 zend_update_property(nsq_message_ce,msg_object,ZEND_STRL("message_id"), &message_id TSRMLS_CC);
 
+                //attempts
+                ZVAL_LONG(&attempts, msg->attempts);
+                zend_update_property(nsq_message_ce,msg_object,ZEND_STRL("attempts"), &attempts TSRMLS_CC);
 
-                //ZVAL_OBJ(&params[0], Z_OBJ_P(msg_object));  
-                ZVAL_STR_COPY(&params[0], body);  
+                //timestamp
+                ZVAL_LONG(&timestamp, msg->timestamp);
+                zend_update_property(nsq_message_ce,msg_object,ZEND_STRL("timestamp"), &timestamp TSRMLS_CC);
+
+                //payload
+                zend_string *payload_str = zend_string_init(msg->body, msg->size-30, 0);
+                ZVAL_STR_COPY(&payload, payload_str);  
+                zend_update_property(nsq_message_ce,msg_object,ZEND_STRL("payload"), &payload TSRMLS_CC);
+
+
+                ZVAL_OBJ(&params[0], Z_OBJ_P(msg_object));  
+                //ZVAL_STR_COPY(&params[0], body);  
                 zend_string_release(body);
                 fci->params = params;
                 fci->param_count = 1;

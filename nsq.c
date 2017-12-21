@@ -221,7 +221,6 @@ PHP_METHOD(Nsq,subscribe)
                     msg->delay_time = 0;
                 }
                 convert_to_string(nsqd_port);
-                php_var_dump(nsqd_host,0);
 
                 subscribe(Z_STRVAL_P(nsqd_host), Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); 
                 //subscribe("127.0.0.1", Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); 

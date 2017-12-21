@@ -1,6 +1,6 @@
 #include <php.h>
 
- zend_class_entry *nsq_message_ce;
+zend_class_entry *nsq_message_ce;
 
 static const zend_function_entry nsq_message_functions[] = {
 	PHP_FE_END	/* Must be the last line in nsq_functions[] */
