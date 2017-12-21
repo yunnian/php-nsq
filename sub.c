@@ -149,9 +149,7 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
 
         //n = sprintf(b, "%s", msg2);
         //send(sock, b,strlen(msg2) ,0);
-        char  rd[8];
-        sprintf(rd, "RDY %d\n", msg->rdy);
-        bufferevent_write(bev, rd, strlen(rd));  
+        nsq_ready(bev, msg->rdy);
         return ;  
     }  
 
