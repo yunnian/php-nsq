@@ -188,7 +188,7 @@ PHP_METHOD(Nsq,subscribe)
         return;
     }
     zval * rdy = zend_hash_str_find(Z_ARRVAL_P(config),"rdy",sizeof("rdy")-1);
-    zval * delay_time = zend_hash_str_find(Z_ARRVAL_P(config),"delay_time",sizeof("delay_time")-1);
+    zval * delay_time = zend_hash_str_find(Z_ARRVAL_P(config),"retry_delay_time",sizeof("retry_delay_time")-1);
     zval * connect_num  = zend_hash_str_find(Z_ARRVAL_P(config),"connect_num",sizeof("connect_num")-1);
     char * lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
     php_json_decode(&lookupd_re, lookupd_re_str, sizeof(lookupd_re_str)-1,1,PHP_JSON_PARSER_DEFAULT_DEPTH);
@@ -302,7 +302,7 @@ PHP_MINIT_FUNCTION(nsq)
     INIT_CLASS_ENTRY(nsq,"Nsq",nsq_functions);
     nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
     zend_declare_property_null(nsq_ce,ZEND_STRL("nsqd_connection_fds"),ZEND_ACC_PUBLIC TSRMLS_CC);
-    zend_declare_property_long(nsq_ce,ZEND_STRL("retry_delay_time"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+    //zend_declare_property_long(nsq_ce,ZEND_STRL("retry_delay_time"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
 
 
     /*

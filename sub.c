@@ -236,15 +236,26 @@ void readcb(struct bufferevent *bev,void *arg){
                 ZVAL_OBJ(&params[0], Z_OBJ_P(msg_object));  
                 //ZVAL_STR_COPY(&params[0], body);  
                 zend_string_release(body);
+                efree(msg_object);
                 fci->params = params;
                 fci->param_count = 1;
                 fci->retval = &retval;
-                if(zend_call_function(fci, fcc TSRMLS_CC) !=SUCCESS){
-                    //delay_time = zend_read_property(nsq_ce, getThis(), "retry_delay_time", sizeof("retry_delay_time")-1, 1, &rv3);
+                zend_try{
+                    if(zend_call_function(fci, fcc TSRMLS_CC) !=SUCCESS){
+                        //delay_time = zend_read_property(nsq_ce, getThis(), "retry_delay_time", sizeof("retry_delay_time")-1, 1, &rv3);
+                        printf("shishishi");
+                        nsq_requeue(bev, msg->message_id, msg->delay_time);
+                    }else{
+                        printf("bubu");
+
+                        nsq_finish(bev, msg->message_id);
+                    }
+                } zend_catch {
+                    printf("nini");
                     nsq_requeue(bev, msg->message_id, msg->delay_time);
-                }else{
-                    nsq_finish(bev, msg->message_id);
-                }
+                    zend_bailout();
+                } zend_end_try();
+                
                 zval_dtor(params);
                 free(msg->body);
             }
