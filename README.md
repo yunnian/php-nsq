@@ -1,6 +1,6 @@
 # php-nsq
 
-nsq  client for php extension;
+nsq  client for php72 extension;
 
 
 
