@@ -122,6 +122,7 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
     if (events & BEV_EVENT_EOF)  
     {  
         printf("Connection closed ,retrying\n");  
+		subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, ((NSQArg *)user_data)->fci,((NSQArg *)user_data)->fcc);
         //subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, fci, fcc);
     }  
     else if (events & BEV_EVENT_ERROR)  
