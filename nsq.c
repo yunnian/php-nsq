@@ -78,7 +78,7 @@ PHP_METHOD(Nsq,connect_nsqd)
     int count = zend_array_count(Z_ARRVAL_P(connect_addr_arr));
     nsqd_connect_config * connect_config_arr = emalloc(count*sizeof(nsqd_connect_config));
     memset(connect_config_arr, 0, count * sizeof(nsqd_connect_config));
-    int j = 0;
+    int j = 0 ,i ,h ;
     zval *host,*port;
     ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(connect_addr_arr), val){
         array_init(&explode_re);
@@ -99,7 +99,7 @@ PHP_METHOD(Nsq,connect_nsqd)
     int * sock_arr = connect_nsqd(connect_config_arr, count);
     zval fds;
     array_init(&fds);
-    for (int i = 0; i < count; i++) {
+    for (i = 0; i < count; i++) {
         if(!(sock_arr[i] > 0)){
             RETURN_FALSE
         }
@@ -111,7 +111,7 @@ PHP_METHOD(Nsq,connect_nsqd)
 
     zend_update_property(Z_OBJCE_P(getThis()),getThis(),ZEND_STRL("nsqd_connection_fds"), &fds TSRMLS_CC);
     efree(sock_arr);
-    for (int i = 0; i < count; i++) {
+    for (h = 0; h < count; h++) {
         efree(connect_config_arr->host);
         efree(connect_config_arr->port);
         if(i<count-1){
@@ -186,13 +186,15 @@ PHP_METHOD(Nsq,subscribe)
     zval * delay_time = zend_hash_str_find(Z_ARRVAL_P(config),"retry_delay_time",sizeof("retry_delay_time")-1);
     zval * connect_num  = zend_hash_str_find(Z_ARRVAL_P(config),"connect_num",sizeof("connect_num")-1);
     char * lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
+    php_printf("nihao %s",lookupd_re_str);
     php_json_decode(&lookupd_re, lookupd_re_str, sizeof(lookupd_re_str)-1,1,PHP_JSON_PARSER_DEFAULT_DEPTH);
     zval * producers = zend_hash_str_find(Z_ARRVAL(lookupd_re),"producers",sizeof("producers")-1);
 
     // foreach producers  to get nsqd address
     zval * val;
     pid_t pid, wt;
-    for (int i = 1; i <= Z_LVAL_P(connect_num); i++) {
+    int i;
+    for (i = 1; i <= Z_LVAL_P(connect_num); i++) {
 
         ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(producers), val) {
             //signal(SIGCHLD,handler);

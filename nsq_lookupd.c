@@ -16,6 +16,12 @@
 
 #include <php.h>
 #include "nsq_lookupd.h"
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+#include <sys/queue.h>
+#include "ext/standard/php_var.h"
+#include "nsq_lookupd.h"
 
 #include "event2/http.h"
 #include "event2/http_struct.h"
@@ -25,6 +31,8 @@
 #include "event2/thread.h"
 
 #include <event.h>
+
+
 extern void error_handling(char* message) ;
 
 typedef struct 
@@ -75,7 +83,7 @@ void FinshCallback(struct evhttp_request* remote_rsp, void* arg)
 } 
 
 
-void RequestErrorCallback(enum evhttp_request_error error, void* arg)
+void RequestErrorCallback(enum evhttp_request_error * error, void* arg)
 {
     fprintf(stderr, "request failed\n");
     event_base_loopexit((struct event_base*)arg, NULL);
@@ -131,7 +139,7 @@ char* request(char* url)
     result  re;
     re.base = base;
     struct evhttp_request* request = evhttp_request_new(FinshCallback, &re);
-    evhttp_request_set_error_cb(request, RequestErrorCallback);
+    //evhttp_request_set_error_cb(request, RequestErrorCallback);
 
     const char* host = evhttp_uri_get_host(uri);
     if (!host)

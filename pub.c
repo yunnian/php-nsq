@@ -40,7 +40,8 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
 
     sock_arr = emalloc(connect_num*sizeof(int));
 
-    for (int i = 0; i < connect_num; i++) {
+    int i;
+    for (i = 0; i < connect_num; i++) {
         struct sockaddr_in serv_addr;
         memset(&serv_addr, 0, sizeof(serv_addr));
         sock_arr[i] = socket(PF_INET, SOCK_STREAM, 0);
@@ -62,7 +63,7 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
         }
         char * msgs  = (char * ) malloc(4);
         memcpy(msgs, "  V2", 4);
-        write((sock_arr[i]), msgs, 4);  
+        int r = write((sock_arr[i]), msgs, 4);  
         free(msgs);
     }
     return sock_arr;
