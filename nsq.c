@@ -78,7 +78,7 @@ PHP_METHOD(Nsq,connect_nsqd)
     int count = zend_array_count(Z_ARRVAL_P(connect_addr_arr));
     nsqd_connect_config * connect_config_arr = emalloc(count*sizeof(nsqd_connect_config));
     memset(connect_config_arr, 0, count * sizeof(nsqd_connect_config));
-    int i = 0;
+    int j = 0;
     zval *host,*port;
     ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(connect_addr_arr), val){
         array_init(&explode_re);
@@ -89,8 +89,8 @@ PHP_METHOD(Nsq,connect_nsqd)
         connect_config_arr->port = emalloc(Z_STRLEN_P(port)); 
         strcpy(connect_config_arr->host,Z_STRVAL_P(host));
         strcpy(connect_config_arr->port,Z_STRVAL_P(port));
-        i++;
-        if(i<count){
+        j++;
+        if(j<count){
             connect_config_arr++;
         }
         zval_dtor(&explode_re);
