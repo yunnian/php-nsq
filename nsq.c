@@ -186,7 +186,10 @@ PHP_METHOD(Nsq,subscribe)
     zval * delay_time = zend_hash_str_find(Z_ARRVAL_P(config),"retry_delay_time",sizeof("retry_delay_time")-1);
     zval * connect_num  = zend_hash_str_find(Z_ARRVAL_P(config),"connect_num",sizeof("connect_num")-1);
     char * lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
-    php_printf("nihao %s",lookupd_re_str);
+    if(*lookupd_re_str == '\0'){
+        php_printf("request lookupd_addr error ,check your lookupd server");
+        return;
+    };
     php_json_decode(&lookupd_re, lookupd_re_str, sizeof(lookupd_re_str)-1,1,PHP_JSON_PARSER_DEFAULT_DEPTH);
     zval * producers = zend_hash_str_find(Z_ARRVAL(lookupd_re),"producers",sizeof("producers")-1);
 
