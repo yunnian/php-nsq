@@ -1,3 +1,19 @@
+/*
+  +----------------------------------------------------------------------+
+  | Copyright (c) 1997-2017 The PHP Group                                |
+  +----------------------------------------------------------------------+
+  | This source file is subject to version 3.01 of the PHP license,      |
+  | that is bundled with this package in the file LICENSE, and is        |
+  | available through the world-wide-web at the following url:           |
+  | http://www.php.net/license/3_01.txt                                  |
+  | If you did not receive a copy of the PHP license and are unable to   |
+  | obtain it through the world-wide-web, please send a note to          |
+  | license@php.net so we can mail you a copy immediately.               |
+  +----------------------------------------------------------------------+
+  | Author: Zhenyu Wu      <wuzhenyu@kuangjue.com>                       |
+  +----------------------------------------------------------------------+
+*/
+
 #include "php.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,13 +43,11 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
     for (int i = 0; i < connect_num; i++) {
         struct sockaddr_in serv_addr;
         memset(&serv_addr, 0, sizeof(serv_addr));
-        //创建用于internet的流协议(TCP)socket
         sock_arr[i] = socket(PF_INET, SOCK_STREAM, 0);
         if (sock_arr[i] == -1) {
             error_handlings("socket() error");
         }
         
-        //设置一个socket地址结构client_addr,代表客户机internet地址, 端口
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_addr.s_addr = inet_addr(connect_config_arr->host);
         serv_addr.sin_port = htons(atoi(connect_config_arr->port));
@@ -43,7 +57,6 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
             connect_config_arr-- ;
         }
 
-        //把socket和socket地址结构联系起来
         if( connect(sock_arr[i],(struct sockaddr*)&serv_addr,sizeof(serv_addr)) == -1) {
             error_handlings("connect() error");
         }

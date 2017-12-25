@@ -24,18 +24,15 @@
 
 #include "php.h"
 #include "ext/standard/php_var.h"
-#include "php_ini.h"
 #include "ext/standard/info.h"
 #include "ext/json/php_json.h"
 #include "php_nsq.h"
 #include <event2/bufferevent.h>  
 #include <event2/buffer.h>  
 #include <event2/listener.h>  
-#include <event2/util.h>  
-#include <event2/event.h>
 
 #include "ext/standard/php_string.h"
-#include <sub.h> 
+#include "sub.h"
 #include "pub.h"  
 #include "nsq_lookupd.h"  
 #include "zend_exceptions.h"
@@ -136,7 +133,6 @@ PHP_METHOD(Nsq,publish)
     zval *topic;
     zval *msg;
     zval * val;
-    zval explode_re;
     zval *sock;
     zval rv3;
 
@@ -144,7 +140,6 @@ PHP_METHOD(Nsq,publish)
         Z_PARAM_ZVAL(topic)
         Z_PARAM_ZVAL(msg)
 	ZEND_PARSE_PARAMETERS_END();
-    //printf("sock_arr:%d\n",sock_arr[r]);
     val = zend_read_property(Z_OBJCE_P(getThis()), getThis(), "nsqd_connection_fds", sizeof("nsqd_connection_fds")-1, 1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(val));
     int r = rand() % count;
@@ -283,7 +278,6 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_requeue, 0, 0, -1)
 ZEND_END_ARG_INFO()
 
 const zend_function_entry nsq_functions[] = {
-	//PHP_FE(subscribe,	NULL)		/* For testing, remove later. */
     PHP_ME(Nsq, connect_nsqd, arginfo_nsq_connect_nsqd, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
@@ -323,8 +317,6 @@ PHP_MINIT_FUNCTION(nsq)
  */
 PHP_MSHUTDOWN_FUNCTION(nsq)
 {
-    //extern int * sock_arr;
-    //efree(sock_arr);
 	/* uncomment this line if you have INI entries
 	UNREGISTER_INI_ENTRIES();
 	*/

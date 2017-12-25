@@ -1,24 +1,28 @@
+/*
+  +----------------------------------------------------------------------+
+  | Copyright (c) 1997-2017 The PHP Group                                |
+  +----------------------------------------------------------------------+
+  | This source file is subject to version 3.01 of the PHP license,      |
+  | that is bundled with this package in the file LICENSE, and is        |
+  | available through the world-wide-web at the following url:           |
+  | http://www.php.net/license/3_01.txt                                  |
+  | If you did not receive a copy of the PHP license and are unable to   |
+  | obtain it through the world-wide-web, please send a note to          |
+  | license@php.net so we can mail you a copy immediately.               |
+  +----------------------------------------------------------------------+
+  | Author: Zhenyu Wu      <wuzhenyu@kuangjue.com>                       |
+  +----------------------------------------------------------------------+
+*/
+
 #include "php.h"
-#include "zend_API.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <inttypes.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
-#include <time.h>  
-#include <event2/bufferevent.h>  
+#include <event2/bufferevent.h>
 #include <event2/buffer.h>  
 #include <event2/listener.h>  
-#include <event2/util.h>  
-#include <event2/event.h>  
 #include"sub.h"
 #include"command.h"
 extern  zend_class_entry *nsq_message_ce;
 
-const int BUFFER_SIZE = 1024;  
 extern void error_handlings(char* message);
 
 void conn_writecb(struct bufferevent *, void *);  
@@ -123,12 +127,11 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
     {  
         printf("Connection closed ,retrying\n");  
 		subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, ((NSQArg *)user_data)->fci,((NSQArg *)user_data)->fcc);
-        //subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, fci, fcc);
-    }  
+    }
     else if (events & BEV_EVENT_ERROR)  
     {  
         printf("Got an error on the connection: %s, retry agin\n",strerror(errno));  
-        //关闭fd 并更改状态
+        //close fd
         sleep(1);
         bufferevent_free(bev);  
 		subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, ((NSQArg *)user_data)->fci,((NSQArg *)user_data)->fcc);
@@ -139,16 +142,11 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
         struct NSQMsg *msg = ((struct NSQArg *)user_data)->msg;
         char * v  = (char * ) malloc(4);
         memcpy(v, "  V2", 4);
-        //write(sock, v, 4);
-        bufferevent_write(bev, v, 4);  
+        bufferevent_write(bev, v, 4);
         free(v);
 
-        //n = sprintf(b, "SUB %s %s%s", msg->topic, msg->channel, "\n");
-        //bufferevent_write(bev, b, strlen(b));  
         nsq_subscribe(bev,msg->topic, msg->channel);
 
-        //n = sprintf(b, "%s", msg2);
-        //send(sock, b,strlen(msg2) ,0);
         nsq_ready(bev, msg->rdy);
         return ;  
     }  
@@ -170,10 +168,8 @@ void readcb(struct bufferevent *bev,void *arg){
         size_t size_l = bufferevent_read(bev, msg_size, 4); 
         readI32((const unsigned char *) msg_size ,  &msg->size);
 
-        //读取相应长度的msg内容
         char * message = malloc(msg->size +1);
         memset(message,0x00,msg->size);
-        //int l =  read(sock, message, msg->size);
         int l =  bufferevent_read(bev, message, msg->size);
         if (errno) {
             printf("errno = %d\n", errno); // errno = 33
@@ -188,7 +184,6 @@ void readcb(struct bufferevent *bev,void *arg){
 
             if(msg->frame_type == 0){
                 if(msg->size == 15){
-                    //send(sock, "NOP\n",strlen("NOP\n") ,0);
                     bufferevent_write(bev, "NOP\n",strlen("NOP\n"));
                 }
             }else if(msg->frame_type == 2){
