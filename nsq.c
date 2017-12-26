@@ -187,11 +187,17 @@ PHP_METHOD(Nsq,subscribe)
     zval * connect_num  = zend_hash_str_find(Z_ARRVAL_P(config),"connect_num",sizeof("connect_num")-1);
     char * lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
     if(*lookupd_re_str == '\0'){
-        php_printf("request lookupd_addr error ,check your lookupd server");
+        php_printf("request lookupd_addr error ,check your lookupd server\n");
         return;
     };
     php_json_decode(&lookupd_re, lookupd_re_str, sizeof(lookupd_re_str)-1,1,PHP_JSON_PARSER_DEFAULT_DEPTH);
     zval * producers = zend_hash_str_find(Z_ARRVAL(lookupd_re),"producers",sizeof("producers")-1);
+    if(!producers){
+        zval * message = zend_hash_str_find(Z_ARRVAL(lookupd_re),"message",sizeof("message")-1);
+        php_printf("%s\n", Z_STRVAL_P(message));
+        return;
+    
+    }
 
     // foreach producers  to get nsqd address
     zval * val;
@@ -200,6 +206,7 @@ PHP_METHOD(Nsq,subscribe)
     for (i = 1; i <= Z_LVAL_P(connect_num); i++) {
 
         ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(producers), val) {
+
             //signal(SIGCHLD,handler);
             pid = fork();
 
