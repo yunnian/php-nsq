@@ -19,9 +19,9 @@ $isTrue = $deferred->connectNsqd($nsqdAddr);
 
 for($i = 0; $i < 9; $i++){
 
-    $dalyMsec = 3000;
+    $delayMsec = 30000000;
     //deferredPublish(string topic,string message, int millisecond); 
-    $deferred->deferredPublish("test", "the message will be received after".$dalyMsec/(1000*60)."minutes", $dalyMsec);
+    $deferred->deferredPublish("test", "the message will be received after".$delayMsec/(1000*60)."minutes", $delayMsec);
 
 }
 
