@@ -31,6 +31,19 @@ for($i = 0; $i < 20; $i++){
 }
 
 
+// deferred publish 
+//function : deferredPublish(string topic,string message, int millisecond); 
+
+$deferred = new Nsq();
+$isTrue = $deferred->connectNsqd($nsqdAddr);
+
+for($i = 0; $i < 20; $i++){
+    $dalyMsec = 3000;
+    $deferred->deferredPublish("test", "the message will be received after".$dalyMsec/(1000*60)."minutes", $dalyMsec);
+
+}
+
+
 ```
 
 
