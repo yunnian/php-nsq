@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include "pub.h"
+#include "ext/standard/php_var.h"
 
 extern void error_handlings(char* message) ;
 
@@ -32,13 +33,27 @@ int ReadI32(const char * pData, int *pValue)
 }
 
 
-static int * sock_arr;
-int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
-    if(sock_arr){
-        return sock_arr;
+int connect_nsqd(zval *nsq_obj, nsqd_connect_config * connect_config_arr, int connect_num){
+    int * sock_arr = emalloc(connect_num*sizeof(int));
+    zval * fds;
+    zval * val;
+    zval rv3;
+    fds = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "nsqd_connection_fds", sizeof("nsqd_connection_fds")-1, 1, &rv3);
+
+    if(Z_TYPE_P(fds) != IS_NULL){
+        /*
+        int i = 0;
+        ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(fds), val){
+            php_var_dump(val,1);
+            sock_arr[i] = Z_LVAL_P(val);
+            php_printf("wodefds:%d", sock_arr[i]);
+            i++;
+        }ZEND_HASH_FOREACH_END();
+        */
+        return  1;
+    
     }
 
-    sock_arr = emalloc(connect_num*sizeof(int));
 
     int i;
     for (i = 0; i < connect_num; i++) {
@@ -53,8 +68,6 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
         serv_addr.sin_addr.s_addr = inet_addr(connect_config_arr->host);
         serv_addr.sin_port = htons(atoi(connect_config_arr->port));
         if(i < connect_num-1){
-            efree(connect_config_arr->host);
-            efree(connect_config_arr->port);
             connect_config_arr-- ;
         }
 
@@ -66,7 +79,26 @@ int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num){
         int r = write((sock_arr[i]), msgs, 4);  
         free(msgs);
     }
-    return sock_arr;
+
+    zval fd_arr;
+    array_init(&fd_arr);
+    for (i = 0; i < connect_num; i++) {
+        if(!(sock_arr[i] > 0)){
+            return -1;
+        }
+        zval fd_val;
+        ZVAL_LONG(&fd_val, sock_arr[i]);
+        zend_hash_index_add(Z_ARRVAL(fd_arr), i, &fd_val);
+        //zval_dtor(&fd_val);
+    }
+    
+
+    zend_update_property(Z_OBJCE_P(nsq_obj),nsq_obj,ZEND_STRL("nsqd_connection_fds"), &fd_arr TSRMLS_CC);
+    efree(sock_arr);
+    zval_dtor(&fd_arr);
+    //zval_dtor(&rv3);
+    return 1;
+
 }
 
 
@@ -81,11 +113,12 @@ int publish(int sock, char *topic, char *msg){
     n = sprintf(&buf[strlen(pub_command)+4], "%s", msg);
 	int sendLen = strlen(pub_command) + strlen(msg)+4;
 	send(sock, buf,sendLen ,0);  
+    free(pub_command);
 
-	char message[30];
-	int str_len;
+    char * message = malloc(3);
     while(1) {
-        int l = read(sock, &message, 2);
+        memset(message, '\0', 3);
+        int l = read(sock, message, 2);
         if(strcmp(message,"OK")==0){
             break;
         }
@@ -95,7 +128,41 @@ int publish(int sock, char *topic, char *msg){
     }
 
     if(strcmp(message,"OK")==0){
-        return 0;
+        return sock;
+    }else{
+        return -1;
+    }
+}
+
+int deferredPublish(int sock, char *topic, char *msg, int defer_time){
+	char buf[1024*1024];
+    size_t n;
+	char * pub_command = malloc(128);
+    int command_len = sprintf(pub_command, "%s%s%s%lld%s", "DPUB ", topic, " ", defer_time, "\n");
+	int  len = htonl(strlen(msg));
+	//int  len = strlen(msg);
+    n = sprintf(buf, "%s", pub_command);
+	memcpy(&buf[command_len], &len, 4);
+    n = sprintf(&buf[command_len + 4], "%s", msg);
+	int sendLen = command_len + strlen(msg) + 4;
+
+	send(sock, buf,sendLen ,0);  
+    free(pub_command);
+    char * message = malloc(3);
+    while(1) {
+        memset(message, '\0', 3);
+
+        int l = read(sock, message, 2);
+        if(strcmp(message,"OK")==0){
+            break;
+        }
+        if(l == 0){
+            break;
+        }
+    }
+
+    if(strcmp(message,"OK")==0){
+        return sock;
     }else{
         return -1;
     }

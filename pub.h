@@ -21,7 +21,8 @@ typedef struct nsqd_connect_config {
      char * port; 
 
 }nsqd_connect_config;
-int* connect_nsqd(nsqd_connect_config * connect_config_arr, int connect_num);
+int connect_nsqd(zval *ce, nsqd_connect_config * connect_config_arr, int connect_num);
 int publish(int sock, char *topic, char *msg);
+int deferredPublish(int sock, char *topic, char *msg, int delay_time);
 
 #endif //STRUGGLE_NSQ_PUB_CLIENT_C_H

@@ -25,14 +25,22 @@ $nsqd_addr = array(
 
 $nsq = new Nsq();
 $is_true = $nsq->connect_nsqd($nsqd_addr);
-
 for($i = 0; $i < 20; $i++){
     $nsq->publish("test", "nihao");
 }
 
 
-```
+// Deferred publish 
+//function : deferredPublish(string topic,string message, int millisecond); 
+//millisecond default : [0 < millisecond < 3600000]
 
+$deferred = new Nsq();
+$isTrue = $deferred->connectNsqd($nsqdAddr);
+for($i = 0; $i < 20; $i++){
+    $deferred->deferredPublish("test", "message daly", 3000); 
+}
+
+```
 
 ###### example for sub: 
 ```

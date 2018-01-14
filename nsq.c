@@ -64,7 +64,7 @@ PHP_INI_END()
    Return a string to confirm that the module is compiled in */
 zend_class_entry *nsq_ce/*, *nsq_message_exception*/;
 
-PHP_METHOD(Nsq,connect_nsqd)
+PHP_METHOD(Nsq,connectNsqd)
 {
 	zval *connect_addr_arr;
     zval * val;
@@ -85,8 +85,8 @@ PHP_METHOD(Nsq,connect_nsqd)
         php_explode(delim, Z_STR_P(val), &explode_re, 1);
         host = zend_hash_index_find(Z_ARRVAL_P(&explode_re), 0);
         port = zend_hash_index_find(Z_ARRVAL_P(&explode_re), 1);
-        connect_config_arr->host = emalloc(Z_STRLEN_P(host)); 
         connect_config_arr->port = emalloc(Z_STRLEN_P(port)); 
+        connect_config_arr->host = emalloc(Z_STRLEN_P(host)); 
         strcpy(connect_config_arr->host,Z_STRVAL_P(host));
         strcpy(connect_config_arr->port,Z_STRVAL_P(port));
         j++;
@@ -96,35 +96,22 @@ PHP_METHOD(Nsq,connect_nsqd)
         zval_dtor(&explode_re);
     
     }ZEND_HASH_FOREACH_END();
-    int * sock_arr = connect_nsqd(connect_config_arr, count);
-    zval fds;
-    array_init(&fds);
-    for (i = 0; i < count; i++) {
-        if(!(sock_arr[i] > 0)){
-            RETURN_FALSE
-        }
-        zval fd_val;
-        ZVAL_LONG(&fd_val, sock_arr[i]);
-        zend_hash_index_add(Z_ARRVAL(fds), i, &fd_val);
-        zval_dtor(&fd_val);
-    }
+    int sock_arr = connect_nsqd(getThis(), connect_config_arr, count);
 
-    zend_update_property(Z_OBJCE_P(getThis()),getThis(),ZEND_STRL("nsqd_connection_fds"), &fds TSRMLS_CC);
-    efree(sock_arr);
-    for (h = 0; h < count; h++) {
+    for (h = 0; h < count ; h++) {
         efree(connect_config_arr->host);
         efree(connect_config_arr->port);
-        if(i<count-1){
+        if(h < count -1 ){
             connect_config_arr--;
         }
         
     }
     efree(connect_config_arr);
+
     zend_string_release(delim);
-    zval_dtor(host);
-    zval_dtor(val);
-    zval_dtor(&fds);
-    zval_dtor(port);
+    //zval_dtor(host);
+    //zval_dtor(val);
+    //zval_dtor(port);
     RETURN_TRUE;
 }
 
@@ -145,7 +132,37 @@ PHP_METHOD(Nsq,publish)
     int r = rand() % count;
     sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
     int re = publish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg));
+    //zval_dtor(&rv3);
+    zval_dtor(msg);
+    zval_dtor(topic);
     if(re==0){
+        RETURN_TRUE
+    }else{
+        RETURN_FALSE
+    
+    }
+}
+
+PHP_METHOD(Nsq,deferredPublish)
+{
+    zval *topic;
+    zval *delay_time;
+    zval *msg;
+    zval * val;
+    zval *sock;
+    zval rv3;
+
+	ZEND_PARSE_PARAMETERS_START(3,3)
+        Z_PARAM_ZVAL(topic)
+        Z_PARAM_ZVAL(msg)
+        Z_PARAM_ZVAL(delay_time)
+	ZEND_PARSE_PARAMETERS_END();
+    val = zend_read_property(Z_OBJCE_P(getThis()), getThis(), "nsqd_connection_fds", sizeof("nsqd_connection_fds")-1, 1, &rv3);
+    int count = zend_array_count(Z_ARRVAL_P(val));
+    int r = rand() % count;
+    sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
+    int re = deferredPublish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg), Z_LVAL_P(delay_time));
+    if(re > 0){
         RETURN_TRUE
     }else{
         RETURN_FALSE
@@ -285,13 +302,20 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_publish, 0, 0, -1)
     ZEND_ARG_INFO(0, msg)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_d_publish, 0, 0, -1)
+    ZEND_ARG_INFO(0, topic)
+    ZEND_ARG_INFO(0, msg)
+    ZEND_ARG_INFO(0, delay_time)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_requeue, 0, 0, -1)
     ZEND_ARG_INFO(0, delay_time)
 ZEND_END_ARG_INFO()
 
 const zend_function_entry nsq_functions[] = {
-    PHP_ME(Nsq, connect_nsqd, arginfo_nsq_connect_nsqd, ZEND_ACC_PUBLIC)
+    PHP_ME(Nsq, connectNsqd, arginfo_nsq_connect_nsqd, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
+    PHP_ME(Nsq, deferredPublish, arginfo_nsq_d_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, requeue, arginfo_nsq_requeue, ZEND_ACC_PUBLIC)
 	PHP_FE_END	/* Must be the last line in nsq_functions[] */
