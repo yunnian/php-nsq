@@ -23,6 +23,9 @@
 #include <sys/socket.h>
 #include "pub.h"
 #include "ext/standard/php_var.h"
+#include "ext/standard/php_smart_string_public.h"
+#include "ext/json/php_json.h"
+#include "zend_smart_str.h"
 
 extern void error_handlings(char* message) ;
 
@@ -32,6 +35,33 @@ int ReadI32(const char * pData, int *pValue)
     return 0;
 }
 
+int send_identify(zval *nsq_obj, int sock)
+{
+
+    //IDENTIFY
+    zval * nsq_config;
+    zval rv3;
+    zval json;
+    nsq_config = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "nsqConfig", sizeof("nsqConfig")-1, 1, &rv3);
+
+    php_var_dump(nsq_config,1);
+    smart_str json_buf = {0};;
+    if(Z_TYPE_P(nsq_config) != IS_NULL){
+        php_json_encode(&json_buf, nsq_config, 0) ;   
+        smart_str_0(&json_buf);
+        ZVAL_NEW_STR(&json,json_buf.s);
+        php_var_dump(&json,1);
+        char * identify_command = malloc(256);
+        int identify_len = sprintf(identify_command, "%s", "IDENTIFY\n");
+        int json_len = htonl(Z_STRLEN(json));
+        php_printf("%d", json_len);
+        memcpy(&identify_command[identify_len], &json_len, 4);
+        php_printf("%s",Z_STRVAL(json));
+        int len_2 = sprintf(&identify_command[identify_len + 4], "%s", Z_STRVAL(json));
+        send(sock,identify_command, identify_len+Z_STRLEN(json)+4 ,0);  
+    }
+    return 0;
+}
 
 int connect_nsqd(zval *nsq_obj, nsqd_connect_config * connect_config_arr, int connect_num){
     int * sock_arr = emalloc(connect_num*sizeof(int));
@@ -77,6 +107,7 @@ int connect_nsqd(zval *nsq_obj, nsqd_connect_config * connect_config_arr, int co
         char * msgs  = (char * ) malloc(4);
         memcpy(msgs, "  V2", 4);
         int r = write((sock_arr[i]), msgs, 4);  
+        send_identify(nsq_obj, sock_arr[i]);
         free(msgs);
     }
 
@@ -103,6 +134,7 @@ int connect_nsqd(zval *nsq_obj, nsqd_connect_config * connect_config_arr, int co
 
 
 int publish(int sock, char *topic, char *msg){
+
 	char buf[1024*1024];
     size_t n;
 	char * pub_command = malloc(strlen(topic) + strlen("PUB \n"));

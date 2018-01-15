@@ -64,6 +64,19 @@ PHP_INI_END()
    Return a string to confirm that the module is compiled in */
 zend_class_entry *nsq_ce/*, *nsq_message_exception*/;
 
+PHP_METHOD(Nsq, __construct){
+    zval *self;
+    zval *nsq_config; //use send IDENTIFY comand
+    self = getThis();
+	ZEND_PARSE_PARAMETERS_START(0,1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ZVAL(nsq_config)
+	ZEND_PARSE_PARAMETERS_END();
+    if(Z_TYPE_P(nsq_config) != IS_NULL){
+        zend_update_property(Z_OBJCE_P(self),self,ZEND_STRL("nsqConfig"), nsq_config TSRMLS_CC);
+    }
+}
+
 PHP_METHOD(Nsq,connectNsqd)
 {
 	zval *connect_addr_arr;
@@ -175,33 +188,33 @@ PHP_METHOD(Nsq,subscribe)
     struct event_base *base = event_base_new();  
 	zend_fcall_info  fci;
 	zend_fcall_info_cache fcc;
-	zval *config;
+	zval *msg_arr;
     zval *class_lookupd;
     zval *lookupd_addr,rv3,lookupd_re;
 
 	ZEND_PARSE_PARAMETERS_START(3,3)
         Z_PARAM_OBJECT(class_lookupd)
-        Z_PARAM_ARRAY(config)
+        Z_PARAM_ARRAY(msg_arr)
 		Z_PARAM_FUNC(fci, fcc)
 	ZEND_PARSE_PARAMETERS_END();
 
 
     lookupd_addr = zend_read_property(Z_OBJCE_P(class_lookupd), class_lookupd, "address", sizeof("address")-1, 1, &rv3);
 
-    zval * topic = zend_hash_str_find(Z_ARRVAL_P(config),"topic",sizeof("topic")-1);
+    zval * topic = zend_hash_str_find(Z_ARRVAL_P(msg_arr),"topic",sizeof("topic")-1);
     if(!topic){
         php_error_docref(NULL, E_WARNING, "not find topic key");
         return;
     }
 
-    zval * channel = zend_hash_str_find(Z_ARRVAL_P(config),"channel",sizeof("channel")-1);
+    zval * channel = zend_hash_str_find(Z_ARRVAL_P(msg_arr),"channel",sizeof("channel")-1);
     if(!channel){
         php_error_docref(NULL, E_WARNING, "not find channel key");
         return;
     }
-    zval * rdy = zend_hash_str_find(Z_ARRVAL_P(config),"rdy",sizeof("rdy")-1);
-    zval * delay_time = zend_hash_str_find(Z_ARRVAL_P(config),"retry_delay_time",sizeof("retry_delay_time")-1);
-    zval * connect_num  = zend_hash_str_find(Z_ARRVAL_P(config),"connect_num",sizeof("connect_num")-1);
+    zval * rdy = zend_hash_str_find(Z_ARRVAL_P(msg_arr),"rdy",sizeof("rdy")-1);
+    zval * delay_time = zend_hash_str_find(Z_ARRVAL_P(msg_arr),"retry_delay_time",sizeof("retry_delay_time")-1);
+    zval * connect_num  = zend_hash_str_find(Z_ARRVAL_P(msg_arr),"connect_num",sizeof("connect_num")-1);
     char * lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
     if(*lookupd_re_str == '\0'){
         php_printf("request lookupd_addr error ,check your lookupd server");
@@ -246,7 +259,7 @@ PHP_METHOD(Nsq,subscribe)
 
         } ZEND_HASH_FOREACH_END();
 
-        zval_dtor(config);
+        zval_dtor(msg_arr);
     }
 	wt = wait(NULL);
     zval_dtor(&lookupd_re);
@@ -281,12 +294,16 @@ static void php_nsq_init_globals(zend_nsq_globals *nsq_globals)
  *
  * Every user visible function must have an entry in nsq_functions[].
  */
+ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_ctor, 0, 0, -1)
+    ZEND_ARG_INFO(0, nsq_config)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_connect_nsqd, 0, 0, -1)
     ZEND_ARG_INFO(0, connect_addr_arr)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_subscribe, 0, 0, -1)
-    ZEND_ARG_INFO(0, conifg)
+    ZEND_ARG_INFO(0, msg_arr)
     ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO()
 
@@ -306,6 +323,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_requeue, 0, 0, -1)
 ZEND_END_ARG_INFO()
 
 const zend_function_entry nsq_functions[] = {
+    PHP_ME(Nsq, __construct, arginfo_nsq_ctor, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
     PHP_ME(Nsq, connectNsqd, arginfo_nsq_connect_nsqd, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, deferredPublish, arginfo_nsq_d_publish, ZEND_ACC_PUBLIC)
@@ -324,6 +342,7 @@ PHP_MINIT_FUNCTION(nsq)
     zend_class_entry nsq;
     INIT_CLASS_ENTRY(nsq,"Nsq",nsq_functions);
     nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
+    zend_declare_property_null(nsq_ce,ZEND_STRL("nsqConfig"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_ce,ZEND_STRL("nsqd_connection_fds"),ZEND_ACC_PUBLIC TSRMLS_CC);
     //zend_declare_property_long(nsq_ce,ZEND_STRL("retry_delay_time"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
 

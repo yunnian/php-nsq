@@ -49,7 +49,7 @@ for($i = 0; $i < 20; $i++){
 //sub
 $nsq_lookupd = new NsqLookupd("127.0.0.1:4161"); //the nsqlookupd tcp addr
 $nsq = new Nsq();
-$config = array(
+$msgConfig = array(
     "topic" => "test",
     "channel" => "struggle",
     "rdy" => 2,                //optional , default 1
@@ -57,7 +57,7 @@ $config = array(
     "retry_delay_time" => 5000,  //optional, default 0 , after 5000 msec, message will be retried
 );
 
-$nsq->subscribe($nsq_lookupd, $config, function($msg){ 
+$nsq->subscribe($nsq_lookupd, $msgConfig, function($msg){ 
 
     echo $msg->payload;
     echo $msg->attempts;

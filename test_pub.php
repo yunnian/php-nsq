@@ -14,12 +14,12 @@ for($i = 0; $i < 9; $i++){
 
 
 // deferred publish
-$deferred = new Nsq();
+$deferred = new Nsq(["max-req-timeout"=>60000000]);
 $isTrue = $deferred->connectNsqd($nsqdAddr);
 
 for($i = 0; $i < 9; $i++){
 
-    $delayMsec = 30000000;
+    $delayMsec = 36000000;
     //deferredPublish(string topic,string message, int millisecond); 
     $deferred->deferredPublish("test", "the message will be received after".$delayMsec/(1000*60)."minutes", $delayMsec);
 
