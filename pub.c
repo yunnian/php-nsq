@@ -44,22 +44,20 @@ int send_identify(zval *nsq_obj, int sock)
     zval json;
     nsq_config = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "nsqConfig", sizeof("nsqConfig")-1, 1, &rv3);
 
-    php_var_dump(nsq_config,1);
-    smart_str json_buf = {0};;
+    smart_str json_buf = {0};
     if(Z_TYPE_P(nsq_config) != IS_NULL){
         php_json_encode(&json_buf, nsq_config, 0) ;   
         smart_str_0(&json_buf);
         ZVAL_NEW_STR(&json,json_buf.s);
-        php_var_dump(&json,1);
         char * identify_command = malloc(256);
+        memset(identify_command, '\0', 256);
         int identify_len = sprintf(identify_command, "%s", "IDENTIFY\n");
-        int json_len = htonl(Z_STRLEN(json));
-        php_printf("%d", json_len);
-        memcpy(&identify_command[identify_len], &json_len, 4);
-        php_printf("%s",Z_STRVAL(json));
-        int len_2 = sprintf(&identify_command[identify_len + 4], "%s", Z_STRVAL(json));
+        uint32_t json_len = htonl(Z_STRLEN(json));
+        memcpy(identify_command + identify_len, &json_len, 4);
+        int len_2 = sprintf(identify_command + identify_len + 4, "%s", Z_STRVAL(json));
         send(sock,identify_command, identify_len+Z_STRLEN(json)+4 ,0);  
     }
+    zval_dtor(&json);
     return 0;
 }
 
