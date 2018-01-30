@@ -12,5 +12,8 @@ $config = array(
 );
 
 $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
+    //$test = new Nsq();
+    //$test->touch();
+    $msg->touch();
     echo $msg->payload.$msg->attempts."\n";
 });

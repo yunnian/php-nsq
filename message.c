@@ -15,13 +15,29 @@
 */
 
 #include <php.h>
+#include "ext/standard/php_var.h"
 
 zend_class_entry *nsq_message_ce;
 
+extern struct bufferevent bev_resource;
+PHP_METHOD(NsqMessage,touch)
+{
+    zval *consumer_index;
+    zval rv3;
+    consumer_index = zend_read_property(Z_OBJCE_P(getThis()), getThis(), "consumer_index", sizeof("consumer_index")-1, 1, &rv3);
+    php_var_dump(consumer_index,1);
+    php_printf("啦拉拉我是卖报的小行家");
+}
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_touch, 0, 0, -1)
+ZEND_END_ARG_INFO()
+
 static const zend_function_entry nsq_message_functions[] = {
+    PHP_ME(NsqMessage, touch, arginfo_nsq_touch, ZEND_ACC_PUBLIC)
 	PHP_FE_END	/* Must be the last line in nsq_functions[] */
 
 };
+
 void message_init(){
     zend_class_entry nsq_message;
     INIT_CLASS_ENTRY(nsq_message,"NsqMessage",nsq_message_functions);
@@ -31,4 +47,5 @@ void message_init(){
     zend_declare_property_null(nsq_message_ce,ZEND_STRL("timestamp"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_message_ce,ZEND_STRL("attempts"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_message_ce,ZEND_STRL("payload"),ZEND_ACC_PUBLIC TSRMLS_CC);
+    zend_declare_property_null(nsq_message_ce,ZEND_STRL("consumer_index"),ZEND_ACC_PUBLIC TSRMLS_CC);
 }

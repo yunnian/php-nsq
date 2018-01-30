@@ -31,14 +31,16 @@ typedef struct NSQMsg {
 }NSQMsg;
 
 typedef struct NSQArg{
+    int consumer_index;
     NSQMsg *msg;
     const char * host;
     const char * port;
 	zend_fcall_info  *fci;
 	zend_fcall_info_cache *fcc;
+    //zval *nsq_object;
 	
 }NSQArg;
 //param is the nsqlookeupd's ip and port ,return the socket fd
-int subscribe(const char *address, const char * port, struct NSQMsg *msg, zend_fcall_info *fci, zend_fcall_info_cache *fcc);
+int subscribe(NSQArg *nsq_arg);
 
 #endif //STRUGGLE_NSQ_SUB_CLIENT_H

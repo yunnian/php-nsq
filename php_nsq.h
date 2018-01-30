@@ -36,6 +36,9 @@ extern zend_module_entry nsq_module_entry;
 #include "TSRM.h"
 #endif
 
+#define get_object_handle(object)        Z_OBJ_HANDLE_P(object)
+
+
 void message_init();
 void error_handlings(char* message);
 void error_handlings(char* message) {

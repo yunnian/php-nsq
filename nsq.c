@@ -170,6 +170,8 @@ PHP_METHOD(Nsq,deferredPublish)
     }
 }
 
+extern struct bufferevent **bev_resource;
+
 PHP_METHOD(Nsq,subscribe)
 {
     struct event_base *base = event_base_new();  
@@ -220,7 +222,10 @@ PHP_METHOD(Nsq,subscribe)
     zval * val;
     pid_t pid, wt;
     int i;
-    for (i = 1; i <= Z_LVAL_P(connect_num); i++) {
+
+    bev_resource = malloc(sizeof(bev_resource) * Z_LVAL_P(connect_num));
+
+    for (i = 0; i < Z_LVAL_P(connect_num); i++) {
 
         ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(producers), val) {
 
@@ -246,9 +251,22 @@ PHP_METHOD(Nsq,subscribe)
                 }
                 convert_to_string(nsqd_port);
 
-                subscribe(Z_STRVAL_P(nsqd_host), Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); 
+                
+                NSQArg *arg ; 
+                arg = malloc(sizeof(NSQArg));
+                arg->msg= msg;
+                arg->consumer_index= i;
+                php_printf("nihao:%d",i);
+                arg->host = Z_STRVAL_P(nsqd_host);
+                arg->port = Z_STRVAL_P(nsqd_port);
+                arg->fci = &fci;
+                arg->fcc = &fcc;
+                //arg->nsq_object = getThis();
+
+                subscribe(arg); 
                 //subscribe("127.0.0.1", Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); 
                 free(msg);
+                free(arg);
             }
 
         } ZEND_HASH_FOREACH_END();
@@ -296,6 +314,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_subscribe, 0, 0, -1)
     ZEND_ARG_INFO(0, conifg)
     ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO()
+
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_publish, 0, 0, -1)
     ZEND_ARG_INFO(0, topic)

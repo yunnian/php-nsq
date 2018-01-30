@@ -19,8 +19,8 @@
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>  
 #include <event2/listener.h>  
-#include"sub.h"
-#include"command.h"
+#include "sub.h"
+#include "command.h"
 extern  zend_class_entry *nsq_message_ce;
 
 extern void error_handlings(char* message);
@@ -56,24 +56,26 @@ uint64_t ntoh64(const uint8_t *data) {
 }
 
 
-int subscribe(const char *address, const char* port,struct NSQMsg *msg, zend_fcall_info *fci, zend_fcall_info_cache *fcc){
+struct bufferevent **bev_resource;
+int subscribe(NSQArg *arg)
+{
     struct sockaddr_in srv;  
     struct hostent *he;
     memset(&srv, 0, sizeof(srv));  
     int retry_num = 1;
 
-	if(check_ipaddr(address)){
-        srv.sin_addr.s_addr = inet_addr(address);  
+	if(check_ipaddr(arg->host)){
+        srv.sin_addr.s_addr = inet_addr(arg->host);  
     }else{
         /* resolve hostname */
-        if ( (he = gethostbyname(address) ) == NULL ) {
+        if ( (he = gethostbyname(arg->host) ) == NULL ) {
             exit(1); /* error */
         }
         /* copy the network address to sockaddr_in structure */
         memcpy(&srv.sin_addr, he->h_addr_list[0], he->h_length);
     }
     srv.sin_family = AF_INET;  
-    srv.sin_port = htons(atoi(port));  
+    srv.sin_port = htons(atoi(arg->port));  
     struct event_base *base = event_base_new();  
     if (!base)  
     {  
@@ -82,16 +84,11 @@ int subscribe(const char *address, const char* port,struct NSQMsg *msg, zend_fca
     }  
 
     struct bufferevent* bev = bufferevent_socket_new(base, -1, BEV_OPT_CLOSE_ON_FREE);  
+    bev_resource [ arg->consumer_index ] = bev ; 
+    
     //监听终端输入事件 暂时用不上 
     //struct event* ev_cmd = event_new(base, STDIN_FILENO,  EV_READ | EV_PERSIST,  cmd_msg_cb, (void*)bev)
 
-    NSQArg *arg ; 
-    arg = malloc(sizeof(NSQArg));
-    arg->msg= msg;
-    arg->host = address;
-    arg->port = port;
-    arg->fci = fci;
-    arg->fcc = fcc;
     bufferevent_setcb(bev, readcb, NULL, conn_eventcb, (void *) arg);  
     int flag=bufferevent_socket_connect(bev, (struct sockaddr *)&srv,sizeof(srv));  
     bufferevent_enable(bev, EV_READ | EV_WRITE);  
@@ -126,7 +123,7 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
     if (events & BEV_EVENT_EOF)  
     {  
         printf("Connection closed ,retrying\n");  
-		subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, ((NSQArg *)user_data)->fci,((NSQArg *)user_data)->fcc);
+		subscribe((NSQArg *) user_data);
     }
     else if (events & BEV_EVENT_ERROR)  
     {  
@@ -134,7 +131,7 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
         //close fd
         sleep(1);
         bufferevent_free(bev);  
-		subscribe(((NSQArg *)user_data)->host, ((NSQArg *)user_data)->port,((NSQArg *)user_data)->msg, ((NSQArg *)user_data)->fci,((NSQArg *)user_data)->fcc);
+		subscribe((NSQArg *) user_data);
     }  
     else if( events & BEV_EVENT_CONNECTED)  
     {  
@@ -157,6 +154,7 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
 void readcb(struct bufferevent *bev,void *arg){
 	
     struct NSQMsg *msg = ((struct NSQArg *)arg)->msg;
+    //zval *nsq_object = ((struct NSQArg *)arg)->nsq_object;
 	zend_fcall_info  *fci = ((struct NSQArg *)arg)->fci;;
 	zend_fcall_info_cache *fcc = ((struct NSQArg *)arg)->fcc;
     errno = 0;
@@ -203,6 +201,7 @@ void readcb(struct bufferevent *bev,void *arg){
                 zval attempts;
                 zval payload ;
                 zval timestamp ;
+                zval consumer_index;
 
                 do{msg_object = (zval *)emalloc(sizeof(msg_object)); bzero(msg_object, sizeof(zval));}while(0);
                 object_init_ex(msg_object, nsq_message_ce);
@@ -225,11 +224,15 @@ void readcb(struct bufferevent *bev,void *arg){
                 ZVAL_STR_COPY(&payload, payload_str);  
                 zend_update_property(nsq_message_ce,msg_object,ZEND_STRL("payload"), &payload TSRMLS_CC);
 
+                //
+                ZVAL_LONG(&consumer_index, ((struct NSQArg *) arg) -> consumer_index);
+                zend_update_property(nsq_message_ce,msg_object,ZEND_STRL("consumer_index"), &consumer_index TSRMLS_CC);
                 //call function
                 ZVAL_OBJ(&params[0], Z_OBJ_P(msg_object));  
+                //ZVAL_OBJ(&params[1], Z_OBJ_P(nsq_object));  
                 //ZVAL_STR_COPY(&params[0], body);  
                 fci->params = params;
-                fci->param_count = 1;
+                fci->param_count = 2;
                 fci->retval = &retval;
                 if(zend_call_function(fci, fcc TSRMLS_CC) !=SUCCESS){
                     //delay_time = zend_read_property(nsq_ce, getThis(), "retry_delay_time", sizeof("retry_delay_time")-1, 1, &rv3);
