@@ -56,7 +56,6 @@ uint64_t ntoh64(const uint8_t *data) {
 }
 
 
-struct bufferevent **bev_resource;
 int subscribe(NSQArg *arg)
 {
     struct sockaddr_in srv;  
@@ -84,7 +83,6 @@ int subscribe(NSQArg *arg)
     }  
 
     struct bufferevent* bev = bufferevent_socket_new(base, -1, BEV_OPT_CLOSE_ON_FREE);  
-    bev_resource [ arg->consumer_index ] = bev ; 
     
     //监听终端输入事件 暂时用不上 
     //struct event* ev_cmd = event_new(base, STDIN_FILENO,  EV_READ | EV_PERSIST,  cmd_msg_cb, (void*)bev)
@@ -151,6 +149,8 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
     bufferevent_free(bev);  
 }  
 
+extern int  le_bufferevent;
+
 void readcb(struct bufferevent *bev,void *arg){
 	
     struct NSQMsg *msg = ((struct NSQArg *)arg)->msg;
@@ -193,7 +193,7 @@ void readcb(struct bufferevent *bev,void *arg){
                 memcpy(msg->body,message+30, msg->size-30);
 
                 zval retval;
-                zval params[1];
+                zval params[2];
 
                 zend_string * body =  zend_string_init(msg->body, msg->size -30, 0);
                 zval *msg_object;
@@ -201,7 +201,6 @@ void readcb(struct bufferevent *bev,void *arg){
                 zval attempts;
                 zval payload ;
                 zval timestamp ;
-                zval consumer_index;
 
                 do{msg_object = (zval *)emalloc(sizeof(msg_object)); bzero(msg_object, sizeof(zval));}while(0);
                 object_init_ex(msg_object, nsq_message_ce);
@@ -224,12 +223,9 @@ void readcb(struct bufferevent *bev,void *arg){
                 ZVAL_STR_COPY(&payload, payload_str);  
                 zend_update_property(nsq_message_ce,msg_object,ZEND_STRL("payload"), &payload TSRMLS_CC);
 
-                //
-                ZVAL_LONG(&consumer_index, ((struct NSQArg *) arg) -> consumer_index);
-                zend_update_property(nsq_message_ce,msg_object,ZEND_STRL("consumer_index"), &consumer_index TSRMLS_CC);
                 //call function
                 ZVAL_OBJ(&params[0], Z_OBJ_P(msg_object));  
-                //ZVAL_OBJ(&params[1], Z_OBJ_P(nsq_object));  
+                ZVAL_RES(&params[1], zend_register_resource(bev,le_bufferevent));  
                 //ZVAL_STR_COPY(&params[0], body);  
                 fci->params = params;
                 fci->param_count = 2;

@@ -8,7 +8,7 @@ $nsqdAddr = array(
 $nsq = new Nsq();
 $isTrue = $nsq->connectNsqd($nsqdAddr);
 
-for($i = 0; $i < 3; $i++){
+for($i = 0; $i < 10; $i++){
     $nsq->publish("test", "nihao");
 }
 

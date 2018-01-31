@@ -13,9 +13,9 @@ $config = array(
     "retry_delay_time" => 5000,  // after 5000 msec, message will be retried
 );
 
-$nsq->subscribe($nsq_lookupd, $config, function($msg){ 
-    //$test = new Nsq();
-    //$test->touch();
-    $msg->touch();
+$nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){ 
+
+    //$msg->touch($bev,$msg->message_id);
+
     echo $msg->payload.$msg->attempts."\n";
 });

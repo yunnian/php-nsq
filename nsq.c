@@ -44,7 +44,7 @@ ZEND_DECLARE_MODULE_GLOBALS(nsq)
 
 /* True global resources - no need for thread safety here */
 static int le_nsq;
-static int le_bufferevent;
+ int le_bufferevent;
 
 /* {{{ PHP_INI
  */
@@ -171,7 +171,6 @@ PHP_METHOD(Nsq,deferredPublish)
     }
 }
 
-extern struct bufferevent **bev_resource;
 
 PHP_METHOD(Nsq,subscribe)
 {
@@ -224,7 +223,6 @@ PHP_METHOD(Nsq,subscribe)
     pid_t pid, wt;
     int i;
 
-    bev_resource = malloc(sizeof(bev_resource) * Z_LVAL_P(connect_num));
 
     for (i = 0; i < Z_LVAL_P(connect_num); i++) {
 
@@ -256,16 +254,12 @@ PHP_METHOD(Nsq,subscribe)
                 NSQArg *arg ; 
                 arg = malloc(sizeof(NSQArg));
                 arg->msg= msg;
-                arg->consumer_index= i;
-                php_printf("nihao:%d",i);
                 arg->host = Z_STRVAL_P(nsqd_host);
                 arg->port = Z_STRVAL_P(nsqd_port);
                 arg->fci = &fci;
                 arg->fcc = &fcc;
-                //arg->nsq_object = getThis();
 
                 subscribe(arg); 
-                //subscribe("127.0.0.1", Z_STRVAL_P(nsqd_port), msg, &fci, &fcc); 
                 free(msg);
                 free(arg);
             }
@@ -283,6 +277,13 @@ PHP_METHOD(Nsq,requeue)
     zend_throw_exception(NULL, "the message will be retry", 0);
     
 }
+
+
+static void _php_bufferevent_dtor(zend_resource *rsrc TSRMLS_DC) /* {{{ */ {
+    struct bufferevent *bevent = (struct bufferevent*) rsrc;
+    efree(bevent);
+}
+
 
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and
