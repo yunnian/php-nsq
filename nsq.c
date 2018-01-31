@@ -44,6 +44,7 @@ ZEND_DECLARE_MODULE_GLOBALS(nsq)
 
 /* True global resources - no need for thread safety here */
 static int le_nsq;
+static int le_bufferevent;
 
 /* {{{ PHP_INI
  */
@@ -351,16 +352,8 @@ PHP_MINIT_FUNCTION(nsq)
     INIT_CLASS_ENTRY(nsq,"Nsq",nsq_functions);
     nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
     zend_declare_property_null(nsq_ce,ZEND_STRL("nsqd_connection_fds"),ZEND_ACC_PUBLIC TSRMLS_CC);
-    //zend_declare_property_long(nsq_ce,ZEND_STRL("retry_delay_time"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+    le_bufferevent = zend_register_list_destructors_ex(_php_bufferevent_dtor, NULL, "buffer event", module_number);
 
-
-    /*
-    zend_class_entry message_exception;
-    INIT_CLASS_ENTRY(message_exception,"NsqMessageException",nsq_functions);
-    nsq_message_exception = zend_register_internal_class_ex(&message_exception TSRMLS_CC,zend_ce_exception);
-    zend_declare_property_long(nsq_message_exception,ZEND_STRL("retry_delay_time"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
-
-*/
     lookupd_init();
     message_init();
 
