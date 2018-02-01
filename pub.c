@@ -23,6 +23,7 @@
 #include <sys/socket.h>
 #include "pub.h"
 #include "ext/standard/php_var.h"
+#include <errno.h>
 
 extern void error_handlings(char* message) ;
 
@@ -102,6 +103,8 @@ int connect_nsqd(zval *nsq_obj, nsqd_connect_config * connect_config_arr, int co
 }
 
 
+extern int errno ;
+
 int publish(int sock, char *topic, char *msg){
 	char buf[1024*1024];
     size_t n;
@@ -121,28 +124,16 @@ int publish(int sock, char *topic, char *msg){
     while(1) {
         memset(message, '\0', 20);
         int l = read(sock, message, 2);
-        php_printf("message:%s\n",message);
         if(strcmp(message,"OK")==0){
             break;
-        }else{
-            if(strlen(message) > 0){
-                //int l = read(sock, message, 9);
-                //php_printf("message:%s\n",message);
-                //send(sock, "NOP",strlen("NOP\n") ,0);  
-                break;
-            }
-
-        
-        }
-
-/*
-        if(strcmp(message,"_heartbeat_")==0){
-            send(sock, "NOP",strlen("NOP") ,0);  
+        // read heartbeat
+        } else if(strcmp(message,"_h")==0){
+            int l = read(sock, message, 9);
             break;
         
         }
-        */
-        if(l >= 0){
+        if(l == 0){
+            fprintf(stderr, "Value of errno: %d\n", errno);
             break;
         }
     }
