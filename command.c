@@ -47,6 +47,15 @@ void nsq_finish(struct bufferevent *bev, const char *id)
     bufferevent_write(bev, b, n);  
 }
 
+void nsq_touch(struct bufferevent *bev, const char *id)
+{
+    char b[MAX_BUF_SIZE];
+    size_t n;
+
+    n = sprintf(b, "TOUCH %s%s", id, NEW_LINE);
+    bufferevent_write(bev, b, n);  
+}
+
 
 void nsq_nop(struct bufferevent *bev)
 {

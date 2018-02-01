@@ -3,8 +3,10 @@
 nsq  client for php72 extension;
 
 
+### intall :
 
-#### Quick Start :
+    Dependencies: libevent
+
     1. sudo phpize
     2. ./configure 
     3. make  
@@ -15,7 +17,7 @@ nsq  client for php72 extension;
     extension = nsq.so;
 
 
-###### example for pub:
+### Example for pub:
 
 ```
 $nsqd_addr = array(
@@ -42,11 +44,13 @@ for($i = 0; $i < 20; $i++){
 
 ```
 
-###### example for sub: 
+### Example for sub:
 ```
 <?php 
 
 //sub
+ini_set('memory_limit', '-1');
+
 $nsq_lookupd = new NsqLookupd("127.0.0.1:4161"); //the nsqlookupd tcp addr
 $nsq = new Nsq();
 $config = array(
@@ -54,22 +58,50 @@ $config = array(
     "channel" => "struggle",
     "rdy" => 2,                //optional , default 1
     "connect_num" => 1,        //optional , default 1   
-    "retry_delay_time" => 5000,  //optional, default 0 , after 5000 msec, message will be retried
+    "retry_delay_time" => 5000,  //optional, default 0 , if run callback failed, after 5000 msec, message will be retried
 );
 
-$nsq->subscribe($nsq_lookupd, $config, function($msg){ 
+$nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){ 
 
     echo $msg->payload;
     echo $msg->attempts;
     echo $msg->message_id;
     echo $msg->timestamp;
 
+
 });
 
 ```
+### Nsq Object
 
-###### tips :
+* `publish($topic,$channel)` <br/>
 
+* `deferredPublish($topic,$channel,$msec)` <br/>
+
+* `subscribe($nsq_lookupd,$config,$callback)` <br/>
+
+### Message Object
+
+The following properties and methods are available on Message objects produced by a Reader
+instance.
+
+* `timestamp` <br/>
+  Numeric timestamp for the Message provided by nsqd.
+* `attempts` <br/>
+  The number of attempts that have been made to process this message.
+* `message_id` <br/>
+  The opaque string id for the Message provided by nsqd.
+* `payload` <br/>
+  The message payload as a Buffer object.
+* `finish($bev,$msg->message_id)` <br/>
+  Finish the message as successful.
+* `touch($bev,$msg->message_id)` <br/>
+  Tell nsqd that you want extra time to process the message. It extends the
+  soft timeout by the normal timeout amount.
+
+
+
+### tips :
 
 ```
 1. requeue/retry:
@@ -100,11 +132,19 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 ```
 
-###### Dependencies:
-
-```
-libevent
-
-```
-
-
+Changes
+-------
+* **2.2.0**
+  * Fix pub bug zend_mm_heap corrupted 
+  * Fix pub block bug  when received the 'heartbeats' 
+  * Add the bufferevent resource
+  * Add the deferred publish
+  * Add the touch function
+  * Add the finish function
+* **2.1.1**
+  * Fix core dump
+* **2.0**
+  * retry
+  * message object
+  * fix c99 install error
+  * license

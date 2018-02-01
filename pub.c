@@ -23,6 +23,7 @@
 #include <sys/socket.h>
 #include "pub.h"
 #include "ext/standard/php_var.h"
+#include <errno.h>
 
 extern void error_handlings(char* message) ;
 
@@ -102,10 +103,14 @@ int connect_nsqd(zval *nsq_obj, nsqd_connect_config * connect_config_arr, int co
 }
 
 
+extern int errno ;
+
 int publish(int sock, char *topic, char *msg){
 	char buf[1024*1024];
     size_t n;
 	char * pub_command = malloc(strlen(topic) + strlen("PUB \n"));
+    memset(pub_command, '\0', strlen(topic) + strlen("PUB \n"));
+
     sprintf(pub_command, "%s%s%s", "PUB ",topic, "\n");
 	int  len = htonl(strlen(msg));
     n = sprintf(buf, "%s", pub_command);
@@ -115,14 +120,20 @@ int publish(int sock, char *topic, char *msg){
 	send(sock, buf,sendLen ,0);  
     free(pub_command);
 
-    char * message = malloc(3);
+    char * message = malloc(20);
     while(1) {
-        memset(message, '\0', 3);
+        memset(message, '\0', 20);
         int l = read(sock, message, 2);
         if(strcmp(message,"OK")==0){
             break;
+        // read heartbeat
+        } else if(strcmp(message,"_h")==0){
+            int l = read(sock, message, 9);
+            break;
+        
         }
         if(l == 0){
+            fprintf(stderr, "Value of errno: %d\n", errno);
             break;
         }
     }
@@ -132,6 +143,7 @@ int publish(int sock, char *topic, char *msg){
     }else{
         return -1;
     }
+    free(message);
 }
 
 int deferredPublish(int sock, char *topic, char *msg, int defer_time){
