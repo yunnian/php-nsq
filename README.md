@@ -47,6 +47,8 @@ for($i = 0; $i < 20; $i++){
 <?php 
 
 //sub
+ini_set('memory_limit', '-1');
+
 $nsq_lookupd = new NsqLookupd("127.0.0.1:4161"); //the nsqlookupd tcp addr
 $nsq = new Nsq();
 $config = array(
@@ -57,12 +59,13 @@ $config = array(
     "retry_delay_time" => 5000,  //optional, default 0 , if run callback failed, after 5000 msec, message will be retried
 );
 
-$nsq->subscribe($nsq_lookupd, $config, function($msg){ 
+$nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){ 
 
     echo $msg->payload;
     echo $msg->attempts;
     echo $msg->message_id;
     echo $msg->timestamp;
+
 
 });
 
@@ -81,11 +84,12 @@ instance.
   The opaque string id for the Message provided by nsqd.
 * `payload` <br/>
   The message payload as a Buffer object.
-* `finish()` <br/>
+* `finish($bev,$msg->message_id)` <br/>
   Finish the message as successful.
-* `touch()` <br/>
+* `touch($bev,$msg->message_id)` <br/>
   Tell nsqd that you want extra time to process the message. It extends the
   soft timeout by the normal timeout amount.
+
 
 
 ###### tips :
@@ -127,9 +131,19 @@ libevent
 
 ```
 
-
-###### change logs:
-1、add the touch 
-2、add the finish 
-3、fix pub zend_mm_heap corrupted 
-4、fix pub block when reveive the heartbeats  
+Changes
+-------
+* **2.2.0**
+  * Fix pub bug zend_mm_heap corrupted 
+  * Fix pub block bug  when received the 'heartbeats' 
+  * Add the bufferevent resource
+  * Add the deferred publish
+  * Add the touch function
+  * Add the finish function
+* **2.1.1**
+  * Fix core dump
+* **2.0**
+  * retry
+  * message object
+  * fix c99 install error
+  * license
