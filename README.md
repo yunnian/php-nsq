@@ -17,7 +17,7 @@ nsq  client for php72 extension;
     extension = nsq.so;
 
 
-### Example for sub:
+### Example for pub:
 
 ```
 $nsqd_addr = array(
@@ -72,8 +72,15 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){
 });
 
 ```
+### Nsq Object
 
-### Message
+* `publish($topic,$channel)` <br/>
+
+* `deferredPublish($topic,$channel,$msec)` <br/>
+
+* `subscribe($nsq_lookupd,$config,$callback)` <br/>
+
+### Message Object
 
 The following properties and methods are available on Message objects produced by a Reader
 instance.
