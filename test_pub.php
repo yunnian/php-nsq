@@ -5,18 +5,15 @@ $nsqdAddr = array(
     "127.0.0.1:4154"
 );
 
-//$nsq = new Nsq();
-//$isTrue = $nsq->connectNsqd($nsqdAddr);
+$nsq = new Nsq();
+$isTrue = $nsq->connectNsqd($nsqdAddr);
 
 for($i = 0; $i < 100000000; $i++){
     $msg = "nihao".$i;
-    //$nsq->publish("test", $msg);
-    `curl -d "<nihao>$i" http://127.0.0.1:4151/pub?topic=test`;
-    `curl -d "<nihao>$i" http://127.0.0.1:4155/pub?topic=test`;
+    $nsq->publish("test", $msg);
 }
 
 
-/*
 // deferred publish
 $deferred = new Nsq();
 $isTrue = $deferred->connectNsqd($nsqdAddr);
@@ -29,4 +26,3 @@ for($i = 0; $i < 9; $i++){
 
 }
 
-*/
