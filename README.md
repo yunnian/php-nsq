@@ -59,6 +59,7 @@ $config = array(
     "rdy" => 2,                //optional , default 1
     "connect_num" => 1,        //optional , default 1   
     "retry_delay_time" => 5000,  //optional, default 0 , if run callback failed, after 5000 msec, message will be retried
+    "auto_finish" => true, //default true
 );
 
 $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){ 
