@@ -3,8 +3,12 @@
 nsq  client for php72 extension;
 
 
-
 #### Quick Start :
+
+#### intall :
+
+    Dependencies: libevent
+
     1. sudo phpize
     2. ./configure 
     3. make  
@@ -15,7 +19,7 @@ nsq  client for php72 extension;
     extension = nsq.so;
 
 
-###### example for pub:
+### Example for sub:
 
 ```
 $nsqd_addr = array(
@@ -42,7 +46,7 @@ for($i = 0; $i < 20; $i++){
 
 ```
 
-###### example for sub: 
+### Example for sub:
 ```
 <?php 
 
@@ -121,13 +125,6 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 3. you can use supervisor to supervise process
 
-
-```
-
-###### Dependencies:
-
-```
-libevent
 
 ```
 
