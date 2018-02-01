@@ -3,9 +3,7 @@
 nsq  client for php72 extension;
 
 
-#### Quick Start :
-
-#### intall :
+### intall :
 
     Dependencies: libevent
 
@@ -96,8 +94,7 @@ instance.
 
 
 
-###### tips :
-
+### tips :
 
 ```
 1. requeue/retry:
