@@ -15,7 +15,6 @@ $config = array(
 
 $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){ 
 
-    //$msg->touch($bev,$msg->message_id);
-
     echo $msg->payload.$msg->attempts."\n";
+
 });
