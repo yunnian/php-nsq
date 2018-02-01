@@ -132,9 +132,11 @@ PHP_METHOD(Nsq,publish)
     int count = zend_array_count(Z_ARRVAL_P(val));
     int r = rand() % count;
     sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
+
+    convert_to_string(msg);
     int re = publish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg));
     //zval_dtor(&rv3);
-    zval_dtor(msg);
+    //zval_dtor(msg);
     zval_dtor(topic);
     if(re==0){
         RETURN_TRUE
@@ -201,11 +203,32 @@ PHP_METHOD(Nsq,subscribe)
         php_error_docref(NULL, E_WARNING, "not find channel key");
         return;
     }
+
     zval * rdy = zend_hash_str_find(Z_ARRVAL_P(config),"rdy",sizeof("rdy")-1);
     zval * delay_time = zend_hash_str_find(Z_ARRVAL_P(config),"retry_delay_time",sizeof("retry_delay_time")-1);
     zval * connect_num  = zend_hash_str_find(Z_ARRVAL_P(config),"connect_num",sizeof("connect_num")-1);
+    if(!connect_num){
+        connect_num = emalloc(sizeof(zval));
+        ZVAL_LONG(connect_num, 1);
+    }
+
+    zval * auto_finish  = zend_hash_str_find(Z_ARRVAL_P(config),"auto_finish",sizeof("auto_finish")-1);
+    if(auto_finish && Z_TYPE_P(auto_finish) == IS_FALSE) {
+
+        ZVAL_FALSE(auto_finish);
+
+    } else if(auto_finish && Z_TYPE_P(auto_finish) == IS_TRUE) {
+
+        ZVAL_TRUE(auto_finish);
+
+    } else {
+
+        auto_finish = emalloc(sizeof(auto_finish));
+        ZVAL_TRUE(auto_finish);
+    }
+
     char * lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
-    if(*lookupd_re_str == '\0'){
+    if(*lookupd_re_str == '\0') {
         php_printf("request lookupd_addr error ,check your lookupd server\n");
         return;
     };
@@ -238,18 +261,26 @@ PHP_METHOD(Nsq,subscribe)
                 msg = malloc(sizeof(NSQMsg));
                 msg->topic = Z_STRVAL_P(topic);
                 msg->channel = Z_STRVAL_P(channel); 
+
                 if(rdy){
                     msg->rdy = Z_LVAL_P(rdy);
                 }else{
                     msg->rdy = 1;
                 }
+
                 if(delay_time){
                     msg->delay_time = Z_LVAL_P(delay_time);
                 }else{
                     msg->delay_time = 0;
                 }
-                convert_to_string(nsqd_port);
 
+                if(auto_finish && Z_TYPE_P(auto_finish) == IS_TRUE){
+                    msg->auto_finish = 1;
+                }else{
+                    msg->auto_finish = 0;
+                }
+
+                convert_to_string(nsqd_port);
                 
                 NSQArg *arg ; 
                 arg = malloc(sizeof(NSQArg));
@@ -266,6 +297,8 @@ PHP_METHOD(Nsq,subscribe)
 
         } ZEND_HASH_FOREACH_END();
 
+        zval_dtor(auto_finish);
+        zval_dtor(connect_num);
         zval_dtor(config);
     }
 	wt = wait(NULL);

@@ -28,6 +28,7 @@ typedef struct NSQMsg {
     char *body;
     int rdy;
     int delay_time;
+    zend_bool auto_finish;
 }NSQMsg;
 
 typedef struct NSQArg{

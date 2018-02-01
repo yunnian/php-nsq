@@ -54,7 +54,7 @@ $config = array(
     "channel" => "struggle",
     "rdy" => 2,                //optional , default 1
     "connect_num" => 1,        //optional , default 1   
-    "retry_delay_time" => 5000,  //optional, default 0 , after 5000 msec, message will be retried
+    "retry_delay_time" => 5000,  //optional, default 0 , if run callback failed, after 5000 msec, message will be retried
 );
 
 $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
@@ -67,6 +67,26 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 });
 
 ```
+
+### Message
+
+The following properties and methods are available on Message objects produced by a Reader
+instance.
+
+* `timestamp` <br/>
+  Numeric timestamp for the Message provided by nsqd.
+* `attempts` <br/>
+  The number of attempts that have been made to process this message.
+* `message_id` <br/>
+  The opaque string id for the Message provided by nsqd.
+* `payload` <br/>
+  The message payload as a Buffer object.
+* `finish()` <br/>
+  Finish the message as successful.
+* `touch()` <br/>
+  Tell nsqd that you want extra time to process the message. It extends the
+  soft timeout by the normal timeout amount.
+
 
 ###### tips :
 
@@ -108,3 +128,8 @@ libevent
 ```
 
 
+###### change logs:
+1、add the touch 
+2、add the finish 
+3、fix pub zend_mm_heap corrupted 
+4、fix pub block when reveive the heartbeats  

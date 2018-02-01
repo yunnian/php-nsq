@@ -154,6 +154,7 @@ extern int  le_bufferevent;
 void readcb(struct bufferevent *bev,void *arg){
 	
     struct NSQMsg *msg = ((struct NSQArg *)arg)->msg;
+    int auto_finish =  msg -> auto_finish;
     //zval *nsq_object = ((struct NSQArg *)arg)->nsq_object;
 	zend_fcall_info  *fci = ((struct NSQArg *)arg)->fci;;
 	zend_fcall_info_cache *fcc = ((struct NSQArg *)arg)->fcc;
@@ -234,7 +235,9 @@ void readcb(struct bufferevent *bev,void *arg){
                     //delay_time = zend_read_property(nsq_ce, getThis(), "retry_delay_time", sizeof("retry_delay_time")-1, 1, &rv3);
                     nsq_requeue(bev, msg->message_id, msg->delay_time);
                 }else{
-                    nsq_finish(bev, msg->message_id);
+                    if(auto_finish){
+                        nsq_finish(bev, msg->message_id);
+                    }
                 }
 
                 //free memory
