@@ -40,8 +40,10 @@ extern zend_module_entry nsq_module_entry;
 
 
 void message_init();
-void error_handlings(char* message);
-void error_handlings(char* message) {
+
+void error_handlings(char *message);
+
+void error_handlings(char *message) {
     fputs(message, stderr);
     fputc('\n', stderr);
     //exit(1);
@@ -68,7 +70,7 @@ ZEND_END_MODULE_GLOBALS(nsq)
 ZEND_TSRMLS_CACHE_EXTERN()
 #endif
 
-#endif	/* PHP_NSQ_H */
+#endif    /* PHP_NSQ_H */
 
 
 /*

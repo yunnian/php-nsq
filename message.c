@@ -62,7 +62,7 @@ ZEND_END_ARG_INFO()
 static const zend_function_entry nsq_message_functions[] = {
     PHP_ME(NsqMessage, touch, arginfo_nsq_touch, ZEND_ACC_PUBLIC)
     PHP_ME(NsqMessage, finish, arginfo_nsq_finish, ZEND_ACC_PUBLIC)
-	PHP_FE_END	/* Must be the last line in nsq_functions[] */
+    PHP_FE_END	/* Must be the last line in nsq_functions[] */
 
 };
 

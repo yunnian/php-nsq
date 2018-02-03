@@ -18,8 +18,8 @@
 #define STRUGGLE_NSQ_SUB_CLIENT_H
 
 typedef struct NSQMsg {
-    const char * topic;
-    const char * channel;
+    const char *topic;
+    const char *channel;
     int32_t frame_type;
     int64_t timestamp;
     uint16_t attempts;
@@ -29,15 +29,16 @@ typedef struct NSQMsg {
     int rdy;
     int delay_time;
     zend_bool auto_finish;
-}NSQMsg;
+} NSQMsg;
 
-typedef struct NSQArg{
+typedef struct NSQArg {
     NSQMsg *msg;
-    const char * host;
-    const char * port;
-	zend_fcall_info  *fci;
-	zend_fcall_info_cache *fcc;
-}NSQArg;
+    const char *host;
+    const char *port;
+    zend_fcall_info *fci;
+    zend_fcall_info_cache *fcc;
+} NSQArg;
+
 //param is the nsqlookeupd's ip and port ,return the socket fd
 int subscribe(NSQArg *nsq_arg);
 
