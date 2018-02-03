@@ -42,7 +42,7 @@ typedef struct {
 
 
 ZEND_BEGIN_ARG_INFO_EX(ctor, 0, 0, 1)
-                ZEND_ARG_INFO(0, address)
+    ZEND_ARG_INFO(0, address)
 ZEND_END_ARG_INFO()
 
 static PHP_METHOD(NsqLookupd, __construct);
@@ -50,8 +50,8 @@ static PHP_METHOD(NsqLookupd, __construct);
 static zend_class_entry *nsq_lookupd_ce;
 
 static const zend_function_entry nsq_lookupd_functions[] = {
-        PHP_ME(NsqLookupd, __construct, ctor, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_FE_END    /* Must be the last line in nsq_functions[] */
+    PHP_ME(NsqLookupd, __construct, ctor, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+    PHP_FE_END    /* Must be the last line in nsq_functions[] */
 
 };
 
