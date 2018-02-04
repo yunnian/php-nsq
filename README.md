@@ -49,7 +49,6 @@ for($i = 0; $i < 20; $i++){
 <?php 
 
 //sub
-ini_set('memory_limit', '-1');
 
 $nsq_lookupd = new NsqLookupd("127.0.0.1:4161"); //the nsqlookupd tcp addr
 $nsq = new Nsq();
