@@ -2,7 +2,7 @@
 
 //sub
 
-ini_set('memory_limit', '-1');
+$startMemory = memory_get_usage();
 $nsq_lookupd = new NsqLookupd("127.0.0.1:4161"); //the nsqlookupd tcp addr
 $nsq = new Nsq();
 
@@ -15,8 +15,9 @@ $config = array(
     "auto_finish" => true,
 );
 
-$nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){ 
+$nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){
 
     echo $msg->payload . " " . "attempts:".$msg->attempts."\n";
+    //$msg->touch($bev,$msg->message_id); //if you callback run long time ,you can use this function 
 
 });

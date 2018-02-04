@@ -21,6 +21,7 @@
 #include <event2/listener.h>
 #include "sub.h"
 #include "command.h"
+#include "ext/standard/php_var.h"
 
 extern zend_class_entry *nsq_message_ce;
 
@@ -60,6 +61,7 @@ uint64_t ntoh64(const uint8_t *data) {
            (uint64_t) (data[1]) << 48 | (uint64_t) (data[0]) << 56;
 }
 
+extern int le_bufferevent;
 
 int subscribe(NSQArg *arg) {
     struct sockaddr_in srv;
@@ -86,6 +88,7 @@ int subscribe(NSQArg *arg) {
     }
 
     struct bufferevent *bev = bufferevent_socket_new(base, -1, BEV_OPT_CLOSE_ON_FREE);
+    arg->bev_res =  zend_register_resource(bev, le_bufferevent);
 
     //监听终端输入事件 暂时用不上 
     //struct event* ev_cmd = event_new(base, STDIN_FILENO,  EV_READ | EV_PERSIST,  cmd_msg_cb, (void*)bev)
@@ -109,6 +112,7 @@ int subscribe(NSQArg *arg) {
     }
 
     event_base_dispatch(base);
+    free(arg->msg);
     free(arg);
     event_base_free(base);
     return 1;
@@ -143,10 +147,8 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data) {
     bufferevent_free(bev);
 }
 
-extern int le_bufferevent;
 
 void readcb(struct bufferevent *bev, void *arg) {
-
     struct NSQMsg *msg = ((struct NSQArg *) arg)->msg;
     int auto_finish = msg->auto_finish;
     //zval *nsq_object = ((struct NSQArg *)arg)->nsq_object;
@@ -189,48 +191,38 @@ void readcb(struct bufferevent *bev, void *arg) {
 
                 zval retval;
                 zval params[2];
-
-                zend_string *body = zend_string_init(msg->body, msg->size - 30, 0);
-                zval *msg_object;
+                zval msg_object;
                 zval message_id;
                 zval attempts;
                 zval payload;
                 zval timestamp;
 
-                do {
-                    msg_object = (zval *) emalloc(sizeof(msg_object));
-                    bzero(msg_object, sizeof(zval));
-                }
-                while (0);
-                object_init_ex(msg_object, nsq_message_ce);
+                object_init_ex(&msg_object, nsq_message_ce);
 
                 //message_id
                 zend_string *message_id_str = zend_string_init(msg->message_id, 16, 0);
                 ZVAL_STR_COPY(&message_id, message_id_str);
-                zend_update_property(nsq_message_ce, msg_object, ZEND_STRL("message_id"), &message_id TSRMLS_CC);
+                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("message_id"), &message_id TSRMLS_CC);
 
                 //attempts
                 ZVAL_LONG(&attempts, msg->attempts);
-                zend_update_property(nsq_message_ce, msg_object, ZEND_STRL("attempts"), &attempts TSRMLS_CC);
-
+                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("attempts"), &attempts TSRMLS_CC);
                 //timestamp
                 ZVAL_LONG(&timestamp, msg->timestamp);
-                zend_update_property(nsq_message_ce, msg_object, ZEND_STRL("timestamp"), &timestamp TSRMLS_CC);
+                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("timestamp"), &timestamp TSRMLS_CC);
 
                 //payload
                 zend_string *payload_str = zend_string_init(msg->body, msg->size - 30, 0);
                 ZVAL_STR_COPY(&payload, payload_str);
-                zend_update_property(nsq_message_ce, msg_object, ZEND_STRL("payload"), &payload TSRMLS_CC);
+                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("payload"), &payload TSRMLS_CC);
 
                 //call function
-                ZVAL_OBJ(&params[0], Z_OBJ_P(msg_object));
-                ZVAL_RES(&params[1], zend_register_resource(bev, le_bufferevent));
-                //ZVAL_STR_COPY(&params[0], body);  
+                ZVAL_OBJ(&params[0], Z_OBJ(msg_object));
+                ZVAL_RES(&params[1], ((struct NSQArg *) arg)->bev_res);
                 fci->params = params;
                 fci->param_count = 2;
                 fci->retval = &retval;
                 if (zend_call_function(fci, fcc TSRMLS_CC) != SUCCESS) {
-                    //delay_time = zend_read_property(nsq_ce, getThis(), "retry_delay_time", sizeof("retry_delay_time")-1, 1, &rv3);
                     nsq_requeue(bev, msg->message_id, msg->delay_time);
                 } else {
                     if (auto_finish) {
@@ -239,25 +231,25 @@ void readcb(struct bufferevent *bev, void *arg) {
                 }
 
                 //free memory
-                zval_dtor(params);
-                zend_string_release(body);
+                zval_dtor(&params[0]);
+                //zval_dtor(&params[1]);
                 zend_string_release(payload_str);
+                zval_dtor(&msg_object);
+
                 zend_string_release(message_id_str);
                 zval_dtor(&timestamp);
+                zval_dtor(&retval);
                 zval_dtor(&message_id);
                 zval_dtor(&attempts);
                 zval_dtor(&payload);
-                efree(msg_object);
                 free(msg->body);
             }
-            free(message);
-            free(msg_size);
             free(msg->message_id);
         } else {
             break;
-
         }
-
+        free(message);
+        free(msg_size);
         if (l == -1) {
             error_handlings("read() error");;
         }

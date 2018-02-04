@@ -33,6 +33,7 @@ typedef struct NSQMsg {
 
 typedef struct NSQArg {
     NSQMsg *msg;
+    zend_resource * bev_res;
     const char *host;
     const char *port;
     zend_fcall_info *fci;
