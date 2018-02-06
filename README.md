@@ -134,6 +134,8 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 Changes
 -------
+* **2.3.0**
+  * Optimized memory usage,  Guarantee stability of resident memory 
 * **2.2.0**
   * Fix pub bug zend_mm_heap corrupted 
   * Fix pub block bug  when received the 'heartbeats' 
