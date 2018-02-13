@@ -20,14 +20,15 @@ nsq  client for php72 extension;
 ### Example for pub:
 
 ```
-$nsqd_addr = array(
+$nsqdAddr = array(
     "127.0.0.1:4150",
     "127.0.0.1:4154"
 );
 
 $nsq = new Nsq();
-$is_true = $nsq->connect_nsqd($nsqd_addr);
-for($i = 0; $i < 20; $i++){
+$isTrue = $nsq->connectNsqd($nsqdAddr);
+
+for($i = 0; $i < 10000; $i++){
     $nsq->publish("test", "nihao");
 }
 
