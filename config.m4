@@ -111,5 +111,5 @@ echo "libevent-path:$LIBEVENT_DIR";
   dnl
   PHP_SUBST(NSQ_SHARED_LIBADD)
 
-  PHP_NEW_EXTENSION(nsq, nsq.c pub.c nsq_lookupd.c message.c sub.c command.c, $ext_shared)
+  PHP_NEW_EXTENSION(nsq, nsq.c pub.c nsq_lookupd.c message.c sub.c command.c common.c, $ext_shared)
 fi

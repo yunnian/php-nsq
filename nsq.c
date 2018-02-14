@@ -137,7 +137,7 @@ PHP_METHOD (Nsq, publish)
     convert_to_string(msg);
     int re = publish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg));
     //zval_dtor(&rv3);
-    zval_dtor(msg);
+    //zval_ptr_dtor(msg);
     zval_dtor(sock);
     zval_dtor(topic);
     if (re == 0) {
@@ -476,3 +476,4 @@ ZEND_GET_MODULE(nsq)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+

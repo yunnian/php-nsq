@@ -20,24 +20,21 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <sys/socket.h>
 #include "pub.h"
+#include "common.h"
 #include "ext/standard/php_var.h"
 #include <errno.h>
 
 extern void error_handlings(char *message);
-
-int ReadI32(const char *pData, int *pValue) {
-    *pValue = (pData[0] << 24) | (pData[1] << 16) | (pData[2] << 8) | pData[3];
-    return 0;
-}
-
 
 int connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int connect_num) {
     int *sock_arr = emalloc(connect_num * sizeof(int));
     zval *fds;
     zval *val;
     zval rv3;
+    struct hostent *he;
     fds = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1, 1,
                              &rv3);
 
@@ -55,7 +52,6 @@ int connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int con
 
     }
 
-
     int i;
     for (i = 0; i < connect_num; i++) {
         struct sockaddr_in serv_addr;
@@ -66,7 +62,17 @@ int connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int con
         }
 
         serv_addr.sin_family = AF_INET;
-        serv_addr.sin_addr.s_addr = inet_addr(connect_config_arr->host);
+
+        if (check_ipaddr(connect_config_arr->host)) {
+            serv_addr.sin_addr.s_addr = inet_addr(connect_config_arr->host);
+        } else {
+            /* resolve hostname */
+            if ((he = gethostbyname(connect_config_arr->host)) == NULL) {
+                exit(1); /* error */
+            }
+            /* copy the network address to sockaddr_in structure */
+            memcpy(&serv_addr.sin_addr, he->h_addr_list[0], he->h_length);
+        }
         serv_addr.sin_port = htons(atoi(connect_config_arr->port));
         if (i < connect_num - 1) {
             connect_config_arr--;

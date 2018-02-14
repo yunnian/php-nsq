@@ -21,6 +21,7 @@
 #include <event2/listener.h>
 #include "sub.h"
 #include "command.h"
+#include "common.h"
 #include "ext/standard/php_var.h"
 
 extern zend_class_entry *nsq_message_ce;
@@ -32,34 +33,6 @@ void conn_writecb(struct bufferevent *, void *);
 void readcb(struct bufferevent *, void *msg);
 
 void conn_eventcb(struct bufferevent *, short, void *);
-
-int check_ipaddr(const char *ip);
-
-int readI16(const unsigned char *pData, uint16_t *pValue) {
-    *pValue = (pData[0] << 8) | pData[1];
-    return 0;
-}
-
-int readI32(const unsigned char *pData, int32_t *pValue) {
-    *pValue = (pData[0] << 24) | (pData[1] << 16) | (pData[2] << 8) | pData[3];
-    return 0;
-}
-
-
-int readI64(const unsigned char *data, int64_t *pValue) {
-    *pValue = ((uint64_t) data[0] << 56) | ((uint64_t) data[1] << 48) | ((uint64_t) data[2] << 40) |
-              ((uint64_t) data[3] << 32) | ((uint64_t) data[4] << 24) | ((uint64_t) data[5] << 16) |
-              ((uint64_t) data[6] << 8) | (uint64_t) data[7];
-    return 0;
-
-}
-
-uint64_t ntoh64(const uint8_t *data) {
-    return (uint64_t) (data[7]) | (uint64_t) (data[6]) << 8 |
-           (uint64_t) (data[5]) << 16 | (uint64_t) (data[4]) << 24 |
-           (uint64_t) (data[3]) << 32 | (uint64_t) (data[2]) << 40 |
-           (uint64_t) (data[1]) << 48 | (uint64_t) (data[0]) << 56;
-}
 
 extern int le_bufferevent;
 
@@ -112,8 +85,6 @@ int subscribe(NSQArg *arg) {
     }
 
     event_base_dispatch(base);
-    free(arg->msg);
-    free(arg);
     event_base_free(base);
     return 1;
 
@@ -260,21 +231,6 @@ void readcb(struct bufferevent *bev, void *arg) {
     //return 0;
 }
 
-int check_ipaddr(const char *str) {
-    if (str == NULL || *str == '\0') {
-        return 0;
-    }
-
-    struct sockaddr_in6 addr6;
-    struct sockaddr_in addr4;
-
-    if (1 == inet_pton(AF_INET, str, &addr4.sin_addr)) {
-        return 1;
-    } else if (1 == inet_pton(AF_INET6, str, &addr6.sin6_addr)) {
-        return 1;
-    }
-    return 0;
-}
 
 void conn_writecb(struct bufferevent *bev, void *user_data) {
 }  
