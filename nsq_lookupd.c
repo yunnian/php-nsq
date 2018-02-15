@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <sys/queue.h>
 #include "ext/standard/php_var.h"
 #include "nsq_lookupd.h"
 
