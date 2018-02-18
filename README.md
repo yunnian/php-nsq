@@ -135,6 +135,9 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 Changes
 -------
+* **2.3.1**
+  * Uupport the domain host of pub
+  * Fix pub coredump 
 * **2.3.0**
   * Optimized memory usage,  Guarantee stability of resident memory 
 * **2.2.0**
