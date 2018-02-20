@@ -139,7 +139,6 @@ PHP_METHOD (Nsq, publish)
     //zval_dtor(&rv3);
     //zval_ptr_dtor(msg);
     zval_dtor(sock);
-    zval_dtor(topic);
     if (re > 0) {
         RETURN_TRUE
     } else {
