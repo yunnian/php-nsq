@@ -19,7 +19,7 @@ nsq  client for php72 extension;
 
 ### Example for pub:
 
-```
+```php
 $nsqdAddr = array(
     "127.0.0.1:4150",
     "127.0.0.1:4154"
@@ -46,7 +46,7 @@ for($i = 0; $i < 20; $i++){
 ```
 
 ### Example for sub:
-```
+```php
 <?php 
 
 //sub
