@@ -22,7 +22,7 @@ typedef struct nsqd_connect_config {
 
 } nsqd_connect_config;
 
-int connect_nsqd(zval *ce, nsqd_connect_config *connect_config_arr, int connect_num);
+int * connect_nsqd(zval *ce, nsqd_connect_config *connect_config_arr, int connect_num);
 
 int publish(int sock, char *topic, char *msg);
 
