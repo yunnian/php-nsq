@@ -97,7 +97,7 @@ PHP_METHOD (Nsq, connectNsqd)
         zval_dtor(&explode_re);
 
     } ZEND_HASH_FOREACH_END();
-    int sock_arr = connect_nsqd(getThis(), connect_config_arr, count);
+    int * sock_arr = connect_nsqd(getThis(), connect_config_arr, count);
 
     for (h = 0; h < count; h++) {
         efree(connect_config_arr->host);
@@ -113,7 +113,18 @@ PHP_METHOD (Nsq, connectNsqd)
     //zval_dtor(host);
     //zval_dtor(val);
     //zval_dtor(port);
-    RETURN_TRUE;
+    int sock_is_true = 1;
+    for (i = 0; i < count; i++) {
+        if (!(sock_arr[i] > 0)) {
+            sock_is_true = 0;
+        }
+    }
+    efree(sock_arr);
+    if(sock_is_true){
+        RETURN_TRUE;
+    }else{
+        RETURN_FALSE;
+    }
 }
 
 PHP_METHOD (Nsq, publish) 
@@ -131,6 +142,9 @@ PHP_METHOD (Nsq, publish)
     val = zend_read_property(Z_OBJCE_P(getThis()), getThis(), "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1,
                              1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(val));
+    if(count == 0){
+        RETURN_FALSE;
+    }
     int r = rand() % count;
     sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
 
