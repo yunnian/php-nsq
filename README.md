@@ -102,13 +102,12 @@ instance.
 
 
 
-### tips :
+### Tips :
 
 
 * `if you need some variable in callback ,you should use 'use' :` <br/>
 
 
-```php
     $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev) use ($you_variable){ 
 
         echo $msg->payload;
@@ -118,13 +117,9 @@ instance.
 
 
     });
-```
 
-* `requeue/retry:` <br/>
-
-if you whant to retry your mesage when callback have something wrong, just throw any Exception , example:
-
-    ```php
+* `requeue/retry --  if you whant to retry your mesage when callback have something wrong, just throw any Exception , example:
+` <br/>
     <?php 
 
     $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
@@ -140,7 +135,6 @@ if you whant to retry your mesage when callback have something wrong, just throw
 
     });
 
-    ```
 
 
 
