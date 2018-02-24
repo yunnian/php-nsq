@@ -1,6 +1,6 @@
 # php-nsq
 
-nsq  client for php72 extension;
+NSQ  client for php72 extension; <br/>
 QQ Group : 616063018
 
 
