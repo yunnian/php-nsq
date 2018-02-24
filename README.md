@@ -1,7 +1,6 @@
 # php-nsq
 
 NSQ  client for php72 extension; <br/>
-QQ Group : 616063018
 
 
 ### intall :
@@ -171,3 +170,7 @@ Changes
   * message object
   * fix c99 install error
   * license
+
+QQ Group
+--------
+616063018
