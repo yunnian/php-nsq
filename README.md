@@ -105,7 +105,22 @@ instance.
 ### tips :
 
 ```
-1. requeue/retry:
+
+- if you need some variable in callback ,you should use 'use' :
+
+
+    $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev) use ($you_variable){ 
+
+        echo $msg->payload;
+        echo $msg->attempts;
+        echo $msg->message_id;
+        echo $msg->timestamp;
+
+
+    });
+
+
+- requeue/retry:
 
 if you whant to retry your mesage when callback have something wrong, just throw any Exception , example:
 
@@ -125,10 +140,12 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 });
 
 
-2. if your have strong consuming ability ,you can add you rdy num and connect num
 
 
-3. you can use supervisor to supervise process
+- if your have strong consuming ability ,you can add you rdy num and connect num
+
+
+- you can use supervisor to supervise process
 
 
 ```
