@@ -29,7 +29,7 @@
 
 extern void error_handlings(char *message);
 
-int connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int connect_num) {
+int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int connect_num) {
     int *sock_arr = emalloc(connect_num * sizeof(int));
     zval *fds;
     zval *val;
@@ -39,17 +39,12 @@ int connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int con
                              &rv3);
 
     if (Z_TYPE_P(fds) != IS_NULL) {
-        /*
         int i = 0;
         ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(fds), val){
-            php_var_dump(val,1);
             sock_arr[i] = Z_LVAL_P(val);
-            php_printf("wodefds:%d", sock_arr[i]);
             i++;
         }ZEND_HASH_FOREACH_END();
-        */
-        return 1;
-
+        return sock_arr;
     }
 
     int i;
@@ -80,6 +75,7 @@ int connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int con
 
         if (connect(sock_arr[i], (struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1) {
             error_handlings("connect() error");
+            sock_arr[i] = 0;
         }
         char *msgs = (char *) malloc(4);
         memcpy(msgs, "  V2", 4);
@@ -91,7 +87,8 @@ int connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int con
     array_init(&fd_arr);
     for (i = 0; i < connect_num; i++) {
         if (!(sock_arr[i] > 0)) {
-            return -1;
+            zval_dtor(&fd_arr);
+            return  sock_arr;
         }
         zval fd_val;
         ZVAL_LONG(&fd_val, sock_arr[i]);
@@ -101,11 +98,9 @@ int connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int con
 
 
     zend_update_property(Z_OBJCE_P(nsq_obj), nsq_obj, ZEND_STRL("nsqd_connection_fds"), &fd_arr TSRMLS_CC);
-    efree(sock_arr);
     zval_dtor(&fd_arr);
     //zval_dtor(&rv3);
-    return 1;
-
+    return  sock_arr;
 }
 
 
@@ -172,6 +167,9 @@ int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
 
         int l = read(sock, message, 2);
         if (strcmp(message, "OK") == 0) {
+            break;
+        } else if (strcmp(message, "_h") == 0) {
+            int l = read(sock, message, 9);
             break;
         }
         if (l == 0) {

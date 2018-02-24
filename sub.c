@@ -138,9 +138,8 @@ void readcb(struct bufferevent *bev, void *arg) {
         memset(message, 0x00, msg->size);
         int l = bufferevent_read(bev, message, msg->size);
         if (errno) {
-            printf("errno = %d\n", errno); // errno = 33
-            perror("sqrt failed");
-            printf("error: %s\n", strerror(errno));
+            //printf("errno = %d\n", errno); // errno = 33
+            //printf("error: %s\n", strerror(errno));
         }
         if (l) {
             msg->message_id = (char *) malloc(17);
@@ -195,6 +194,7 @@ void readcb(struct bufferevent *bev, void *arg) {
                 fci->retval = &retval;
                 if (zend_call_function(fci, fcc TSRMLS_CC) != SUCCESS) {
                     nsq_requeue(bev, msg->message_id, msg->delay_time);
+                    php_printf("callback function call failed, The message has been retried\n");
                 } else {
                     if (auto_finish) {
                         nsq_finish(bev, msg->message_id);
