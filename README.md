@@ -105,9 +105,9 @@ instance.
 ### Tips :
 
 
-* `if you need some variable in callback ,you should use 'use' :` <br/>
+1. `If you need some variable in callback ,you should use 'use' :` <br/>
 
-```php
+```
         $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev) use ($you_variable){ 
 
             echo $msg->payload;
@@ -119,10 +119,10 @@ instance.
         });
 ```
 
-* `requeue/retry --  if you whant to retry your mesage when callback have something wrong, just throw any Exception , example:
+2. `Requeue/Retry --  if you whant to retry your mesage when callback have something wrong, just throw any Exception , example:
 ` <br/>
 
-```php
+```
         <?php 
 
         $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
@@ -142,10 +142,10 @@ instance.
 
 
 
-* `if your have strong consuming ability ,you can add you rdy num and connect num` <br/>
+3. `If your have strong consuming ability ,you can add you rdy num and connect num` <br/>
 
 
-* `you can use supervisor to supervise process` <br/>
+4. `You can use supervisor to supervise process` <br/>
 
 
 
