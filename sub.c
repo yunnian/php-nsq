@@ -138,9 +138,8 @@ void readcb(struct bufferevent *bev, void *arg) {
         memset(message, 0x00, msg->size);
         int l = bufferevent_read(bev, message, msg->size);
         if (errno) {
-            printf("errno = %d\n", errno); // errno = 33
-            perror("sqrt failed");
-            printf("error: %s\n", strerror(errno));
+            //printf("errno = %d\n", errno); // errno = 33
+            //printf("error: %s\n", strerror(errno));
         }
         if (l) {
             msg->message_id = (char *) malloc(17);
