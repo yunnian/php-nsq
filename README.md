@@ -107,33 +107,37 @@ instance.
 
 * `if you need some variable in callback ,you should use 'use' :` <br/>
 
+```php
+        $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev) use ($you_variable){ 
 
-    $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev) use ($you_variable){ 
-
-        echo $msg->payload;
-        echo $msg->attempts;
-        echo $msg->message_id;
-        echo $msg->timestamp;
+            echo $msg->payload;
+            echo $msg->attempts;
+            echo $msg->message_id;
+            echo $msg->timestamp;
 
 
-    });
+        });
+```
 
 * `requeue/retry --  if you whant to retry your mesage when callback have something wrong, just throw any Exception , example:
 ` <br/>
-    <?php 
 
-    $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
+```php
+        <?php 
 
-        //do something , error or call something timeout ,you can retry your message:
+        $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
 
-        if($msg->attempts < 3){
-            //the message will be retried after you configure retry_delay_time 
-            throw new Exception(""); 
-        }else{
-            return;
-        }
+            //do something , error or call something timeout ,you can retry your message:
 
-    });
+            if($msg->attempts < 3){
+                //the message will be retried after you configure retry_delay_time 
+                throw new Exception(""); 
+            }else{
+                return;
+            }
+
+        });
+```
 
 
 
