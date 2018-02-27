@@ -31,7 +31,7 @@ $isTrue = $nsq->connectNsqd($nsqdAddr);
 for($i = 0; $i < 10000; $i++){
     $nsq->publish("test", "nihao");
 }
-
+$nsq->closeNsqdConnection();
 
 // Deferred publish 
 //function : deferredPublish(string topic,string message, int millisecond); 
@@ -42,6 +42,7 @@ $isTrue = $deferred->connectNsqd($nsqdAddr);
 for($i = 0; $i < 20; $i++){
     $deferred->deferredPublish("test", "message daly", 3000); 
 }
+$deferred->closeNsqdConnection();
 
 ```
 
@@ -74,6 +75,12 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){
 
 ```
 ### Nsq Object
+
+* `connectNsqd($nsqdAddrArr)` <br/>
+  publish use, You can also use it for health check;
+
+* `closeNsqdConnection()` <br/>
+  close connecNsqd's socket
 
 * `publish($topic,$channel)` <br/>
 
