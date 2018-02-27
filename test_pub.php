@@ -13,6 +13,8 @@ for($i = 0; $i < 10000; $i++){
     $nsq->publish("test", $msg);
 }
 
+$nsq->closeNsqdConnection();
+
 
 // deferred publish
 $deferred = new Nsq();
@@ -25,4 +27,4 @@ for($i = 0; $i < 9; $i++){
     $deferred->deferredPublish("test", "the message will be received after".$delayMsec/(1000*60)."minutes", $delayMsec);
 
 }
-
+$deferred->closeNsqdConnection();
