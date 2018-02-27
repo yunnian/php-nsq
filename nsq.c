@@ -127,6 +127,36 @@ PHP_METHOD (Nsq, connectNsqd)
     }
 }
 
+PHP_METHOD (Nsq, closeNsqdConnection) 
+{
+    zval *connection_fds;
+    zval rv3;
+    zval *val;
+    connection_fds = zend_read_property(Z_OBJCE_P(getThis()), getThis(), "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1,
+                            1, &rv3);
+    int count = zend_array_count(Z_ARRVAL_P(connection_fds));
+    if(count == 0){
+        php_printf("no connection need to close");
+        RETURN_FALSE;
+    }
+    int close_success = 1;
+    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(connection_fds), val) {
+        if(Z_LVAL_P(val)>0){
+            int success = close(Z_LVAL_P(val));
+            if(success != 0){
+                close_success = 0;
+            }
+        };
+    } ZEND_HASH_FOREACH_END();
+    zval_ptr_dtor(connection_fds);
+    ZVAL_NULL(connection_fds);
+    if(close_success){
+        RETURN_TRUE;
+    }else{
+        RETURN_FALSE;
+    }
+}
+
 PHP_METHOD (Nsq, publish) 
 {
     zval *topic;
@@ -362,6 +392,10 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_connect_nsqd, 0, 0, -1)
     ZEND_ARG_INFO(0, connect_addr_arr)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_close_nsqd_connection, 0, 0, -1)
+ZEND_END_ARG_INFO()
+
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_subscribe, 0, 0, -1)
     ZEND_ARG_INFO(0, conifg)
     ZEND_ARG_INFO(0, callback)
@@ -385,6 +419,7 @@ ZEND_END_ARG_INFO()
 
 const zend_function_entry nsq_functions[] = {
     PHP_ME(Nsq, connectNsqd, arginfo_nsq_connect_nsqd, ZEND_ACC_PUBLIC)
+    PHP_ME(Nsq, closeNsqdConnection, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, deferredPublish, arginfo_nsq_d_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
