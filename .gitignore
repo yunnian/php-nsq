@@ -1,6 +1,6 @@
+configure.ac
 *.swp
 .idea
-CMakeLists.txt
 cmake-build-debug/
 .deps
 *.lo
