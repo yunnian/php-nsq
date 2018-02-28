@@ -205,7 +205,7 @@ void readcb(struct bufferevent *bev, void *arg) {
                 zval_dtor(&params[0]);
                 //zval_dtor(&params[1]);
                 zend_string_release(payload_str);
-                zval_dtor(&msg_object);
+                //zval_dtor(&msg_object);
 
                 zend_string_release(message_id_str);
                 zval_dtor(&timestamp);
