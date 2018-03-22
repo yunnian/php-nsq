@@ -37,6 +37,9 @@
 #include "nsq_lookupd.h"
 #include "zend_exceptions.h"
 
+#ifdef HAVE_SYS_WAIT_H
+#include "sys/wait.h"
+#endif
 
 /* If you declare any globals in php_nsq.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(nsq)

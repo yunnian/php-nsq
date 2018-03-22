@@ -66,6 +66,7 @@ echo "libevent-path:$LIBEVENT_DIR";
     -l$LIBNAME 
   ])
 
+  AC_CHECK_HEADERS([sys/wait.h])
 
 
   dnl PHP_ADD_EXTENSION_DEP(libevent, sockets, true)
