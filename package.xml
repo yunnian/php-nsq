@@ -54,6 +54,9 @@
                 <file role='src' name='pub.php'/>
                 <file role='src' name='sub.php'/>
             </dir>
+            <dir name="tests">
+                <file name="001.phpt" role="test" />
+            </dir>
         </dir>
     </contents>
     <dependencies>
@@ -62,13 +65,12 @@
                 <min>7.0.0</min>
             </php>
             <pearinstaller>
-                <min>1.4.0b1</min>
+                <min>1.4.0</min>
             </pearinstaller>
         </required>
     </dependencies>
-
     <providesextension>nsq</providesextension>
     <extsrcrelease>
-        <configureoption name="with-libevent-path" default="no" prompt="libevent directory"/>
+          <configureoption name="with-libevent-path" default="no" prompt="libevent directory"/>
     </extsrcrelease>
 </package>
