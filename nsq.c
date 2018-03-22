@@ -293,7 +293,7 @@ PHP_METHOD (Nsq, subscribe)
 
     // foreach producers  to get nsqd address
     zval *val;
-    pid_t pid, wt;
+    pid_t pid;
     int i;
 
 
@@ -352,7 +352,7 @@ PHP_METHOD (Nsq, subscribe)
         zval_dtor(connect_num);
         zval_dtor(config);
     }
-    wt = wait(NULL);
+    wait(NULL);
     zval_dtor(&lookupd_re);
 }
 
@@ -422,7 +422,7 @@ ZEND_END_ARG_INFO()
 
 const zend_function_entry nsq_functions[] = {
     PHP_ME(Nsq, connectNsqd, arginfo_nsq_connect_nsqd, ZEND_ACC_PUBLIC)
-    PHP_ME(Nsq, closeNsqdConnection, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Nsq, closeNsqdConnection, arginfo_close_nsqd_connection, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, deferredPublish, arginfo_nsq_d_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
