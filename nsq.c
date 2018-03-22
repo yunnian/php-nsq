@@ -493,10 +493,17 @@ PHP_MINFO_FUNCTION (nsq)
 }
 /* }}} */
 
+static const zend_module_dep nsq_deps[] = {
+    ZEND_MOD_REQUIRED("json")
+    ZEND_MOD_END
+};
+
 /* {{{ nsq_module_entry
  */
 zend_module_entry nsq_module_entry = {
-    STANDARD_MODULE_HEADER,
+    STANDARD_MODULE_HEADER_EX,
+    NULL,
+    nsq_deps,
     "nsq",
     NULL, //nsq_functions,
     PHP_MINIT(nsq),
