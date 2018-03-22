@@ -51,8 +51,8 @@
             <file role='src' name='command.h'/>
             <file role='src' name='message.c'/>
             <dir name="examples">
-                <file role='src' name='pub.php'/>
-                <file role='src' name='sub.php'/>
+                <file role='doc' name='pub.php'/>
+                <file role='doc' name='sub.php'/>
             </dir>
             <dir name="tests">
                 <file name="001.phpt" role="test" />
