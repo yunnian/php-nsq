@@ -82,9 +82,9 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){
 * `closeNsqdConnection()` <br/>
   close connecNsqd's socket
 
-* `publish($topic,$channel)` <br/>
+* `publish($topic,$msg)` <br/>
 
-* `deferredPublish($topic,$channel,$msec)` <br/>
+* `deferredPublish($topic,$msg,$msec)` <br/>
 
 * `subscribe($nsq_lookupd,$config,$callback)` <br/>
 
