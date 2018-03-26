@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.9.4" version="2.0"
+         xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
+    <name>nsq</name>
+    <channel>pecl.php.net</channel>
+    <summary>PHP extension for NSQ client</summary>
+    <description>
+        This extension is a NSQ client .NSQ is a message queue system which like Kafka .
+    </description>
+    <lead>
+        <name>rick/ZhenYuwu</name>
+        <user>rick</user>
+        <email>wuzhenyu7758@gmail.com</email>
+        <active>yes</active>
+    </lead>
+    <date>2018-03-22</date>
+    <version>
+        <release>2.3.2</release>
+        <api>2.0.0</api>
+    </version>
+    <stability>
+        <release>stable</release>
+        <api>stable</api>
+    </stability>
+    <license uri="http://www.php.net/license">PHP</license>
+    <notes>
+        * Add function which use of  pub connection close
+        * Fix sub coredump
+        * pecl init
+    </notes>
+    <contents>
+        <dir name="/">
+            <file role="doc" name="CREDITS" />
+            <file role='doc' name='README.md'/>
+            <file role='doc' name='LICENSE'/>
+            <file role='src' name='config.m4'/>
+            <file role='src' name='config.w32'/>
+            <file role='src' name='php_nsq.h'/>
+            <file role='src' name='nsq.c'/>
+            <file role='src' name='pub.c'/>
+            <file role='src' name='pub.h'/>
+            <file role='src' name='sub.c'/>
+            <file role='src' name='sub.h'/>
+            <file role='src' name='nsq_lookupd.c'/>
+            <file role='src' name='nsq_lookupd.h'/>
+            <file role='src' name='common.h'/>
+            <file role='src' name='common.c'/>
+            <file role='src' name='command.c'/>
+            <file role='src' name='command.h'/>
+            <file role='src' name='message.c'/>
+            <dir name="examples">
+                <file role='doc' name='pub.php'/>
+                <file role='doc' name='sub.php'/>
+            </dir>
+            <dir name="tests">
+                <file name="001.phpt" role="test" />
+            </dir>
+        </dir>
+    </contents>
+    <dependencies>
+        <required>
+            <php>
+                <min>7.0.0</min>
+            </php>
+            <pearinstaller>
+                <min>1.4.0</min>
+            </pearinstaller>
+        </required>
+    </dependencies>
+    <providesextension>nsq</providesextension>
+    <extsrcrelease>
+          <configureoption name="with-libevent-path" default="no" prompt="libevent directory"/>
+    </extsrcrelease>
+</package>

@@ -37,6 +37,9 @@
 #include "nsq_lookupd.h"
 #include "zend_exceptions.h"
 
+#ifdef HAVE_SYS_WAIT_H
+#include "sys/wait.h"
+#endif
 
 /* If you declare any globals in php_nsq.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(nsq)
@@ -290,7 +293,7 @@ PHP_METHOD (Nsq, subscribe)
 
     // foreach producers  to get nsqd address
     zval *val;
-    pid_t pid, wt;
+    pid_t pid;
     int i;
 
 
@@ -349,7 +352,7 @@ PHP_METHOD (Nsq, subscribe)
         zval_dtor(connect_num);
         zval_dtor(config);
     }
-    wt = wait(NULL);
+    wait(NULL);
     zval_dtor(&lookupd_re);
 }
 
@@ -419,7 +422,7 @@ ZEND_END_ARG_INFO()
 
 const zend_function_entry nsq_functions[] = {
     PHP_ME(Nsq, connectNsqd, arginfo_nsq_connect_nsqd, ZEND_ACC_PUBLIC)
-    PHP_ME(Nsq, closeNsqdConnection, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Nsq, closeNsqdConnection, arginfo_close_nsqd_connection, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, deferredPublish, arginfo_nsq_d_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
@@ -493,10 +496,17 @@ PHP_MINFO_FUNCTION (nsq)
 }
 /* }}} */
 
+static const zend_module_dep nsq_deps[] = {
+    ZEND_MOD_REQUIRED("json")
+    ZEND_MOD_END
+};
+
 /* {{{ nsq_module_entry
  */
 zend_module_entry nsq_module_entry = {
-    STANDARD_MODULE_HEADER,
+    STANDARD_MODULE_HEADER_EX,
+    NULL,
+    nsq_deps,
     "nsq",
     NULL, //nsq_functions,
     PHP_MINIT(nsq),

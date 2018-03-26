@@ -23,6 +23,7 @@ include
 install-sh
 libtool
 ltmain.sh
+ltmain.sh.backup
 Makefile
 Makefile.fragments
 Makefile.global
