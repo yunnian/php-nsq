@@ -193,7 +193,7 @@ void readcb(struct bufferevent *bev, void *arg) {
                 fci->param_count = 2;
                 fci->retval = &retval;
                 if (zend_call_function(fci, fcc TSRMLS_CC) != SUCCESS) {
-                    php_printf("callback function call failed, The message has been retried\n");
+                    php_printf("callback function call failed \n");
                 } else {
                     if (auto_finish) {
                         if (EG(exception)) {
