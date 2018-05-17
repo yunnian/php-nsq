@@ -2,7 +2,6 @@
 
 //sub
 
-$startMemory = memory_get_usage();
 $nsq_lookupd = new NsqLookupd("127.0.0.1:4161"); //the nsqlookupd http addr
 $nsq = new Nsq();
 
