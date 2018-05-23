@@ -15,7 +15,10 @@
 */
 
 #include <stdio.h>
+#include <unistd.h>
+#include <event2/buffer.h>
 #include <event2/bufferevent.h>
+#include <event2/bufferevent_struct.h>
 
 const static char *NEW_LINE = "\n";
 const static int MAX_BUF_SIZE = 128;
@@ -46,6 +49,9 @@ void nsq_touch(struct bufferevent *bev, const char *id) {
     size_t n;
     n = sprintf(b, "TOUCH %s%s", id, NEW_LINE);
     bufferevent_write(bev, b, n);
+    evutil_socket_t fd = bufferevent_getfd(bev);
+    //int res = buffer_write(bev->output, fd);
+    int res = write(fd, b, n);
 }
 
 
