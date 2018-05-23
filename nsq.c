@@ -68,7 +68,7 @@ PHP_INI_END()
    Return a string to confirm that the module is compiled in */
 zend_class_entry *nsq_ce/*, *nsq_message_exception*/;
 
-PHP_METHOD (Nsq, connectNsqd) 
+PHP_METHOD (Nsq, connectNsqd)
 {
     zval *connect_addr_arr;
     zval *val;
@@ -130,7 +130,7 @@ PHP_METHOD (Nsq, connectNsqd)
     }
 }
 
-PHP_METHOD (Nsq, closeNsqdConnection) 
+PHP_METHOD (Nsq, closeNsqdConnection)
 {
     zval *connection_fds;
     zval rv3;
@@ -160,7 +160,7 @@ PHP_METHOD (Nsq, closeNsqdConnection)
     }
 }
 
-PHP_METHOD (Nsq, publish) 
+PHP_METHOD (Nsq, publish)
 {
     zval *topic;
     zval *msg;
@@ -194,7 +194,7 @@ PHP_METHOD (Nsq, publish)
     }
 }
 
-PHP_METHOD (Nsq, deferredPublish) 
+PHP_METHOD (Nsq, deferredPublish)
 {
     zval *topic;
     zval *delay_time;
@@ -223,7 +223,7 @@ PHP_METHOD (Nsq, deferredPublish)
 }
 
 
-PHP_METHOD (Nsq, subscribe) 
+PHP_METHOD (Nsq, subscribe)
 {
     struct event_base *base = event_base_new();
     zend_fcall_info fci;
@@ -282,7 +282,7 @@ PHP_METHOD (Nsq, subscribe)
         php_printf("request lookupd_addr error ,check your lookupd server\n");
         return;
     };
-    php_json_decode(&lookupd_re, lookupd_re_str, sizeof(lookupd_re_str) - 1, 1, PHP_JSON_PARSER_DEFAULT_DEPTH);
+    php_json_decode(&lookupd_re, lookupd_re_str, strlen(lookupd_re_str), 1, PHP_JSON_PARSER_DEFAULT_DEPTH);
     zval *producers = zend_hash_str_find(Z_ARRVAL(lookupd_re), "producers", sizeof("producers") - 1);
     if (!producers) {
         zval *message = zend_hash_str_find(Z_ARRVAL(lookupd_re), "message", sizeof("message") - 1);
@@ -434,7 +434,7 @@ const zend_function_entry nsq_functions[] = {
 
 /* {{{ PHP_MINIT_FUNCTION
  */
-PHP_MINIT_FUNCTION (nsq) 
+PHP_MINIT_FUNCTION (nsq)
 {
 
     zend_class_entry nsq;
@@ -452,7 +452,7 @@ PHP_MINIT_FUNCTION (nsq)
 
 /* {{{ PHP_MSHUTDOWN_FUNCTION
  */
-PHP_MSHUTDOWN_FUNCTION (nsq) 
+PHP_MSHUTDOWN_FUNCTION (nsq)
 {
     /* uncomment this line if you have INI entries
     UNREGISTER_INI_ENTRIES();
@@ -464,7 +464,7 @@ PHP_MSHUTDOWN_FUNCTION (nsq)
 /* Remove if there's nothing to do at request start */
 /* {{{ PHP_RINIT_FUNCTION
  */
-PHP_RINIT_FUNCTION (nsq) 
+PHP_RINIT_FUNCTION (nsq)
 {
 #if defined(COMPILE_DL_NSQ) && defined(ZTS)
     ZEND_TSRMLS_CACHE_UPDATE();
@@ -476,7 +476,7 @@ PHP_RINIT_FUNCTION (nsq)
 /* Remove if there's nothing to do at request end */
 /* {{{ PHP_RSHUTDOWN_FUNCTION
  */
-PHP_RSHUTDOWN_FUNCTION (nsq) 
+PHP_RSHUTDOWN_FUNCTION (nsq)
 {
     return SUCCESS;
 }
@@ -484,7 +484,7 @@ PHP_RSHUTDOWN_FUNCTION (nsq)
 
 /* {{{ PHP_MINFO_FUNCTION
  */
-PHP_MINFO_FUNCTION (nsq) 
+PHP_MINFO_FUNCTION (nsq)
 {
     php_info_print_table_start();
     php_info_print_table_header(2, "nsq support", "enabled");
@@ -534,4 +534,3 @@ ZEND_GET_MODULE(nsq)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-
