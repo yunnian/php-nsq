@@ -152,7 +152,12 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 3. `If your have strong consuming ability ,you can add you rdy num and connect num` <br/>
 
 
-4. `You can use supervisor to supervise process` <br/>
+4. `You can use supervisor to supervise process,The following configuration needs to be added to the supervisor configuration file: ` <br/>
+```
+    stopasgroup=true
+    killasgroup=true`
+```
+    
 
 
 
