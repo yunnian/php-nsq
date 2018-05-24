@@ -155,7 +155,7 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 4. `You can use supervisor to supervise process,The following configuration needs to be added to the supervisor configuration file: ` <br/>
 ```
     stopasgroup=true
-    killasgroup=true`
+    killasgroup=true
 ```
     
 
