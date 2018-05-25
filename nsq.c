@@ -291,6 +291,11 @@ PHP_METHOD (Nsq, subscribe)
 
     }
 
+    int producers_count = zend_array_count(Z_ARRVAL_P(producers));
+    if(producers_count < 1){
+        php_printf("%s\n", "the topic has not produced on any nsqd in the cluster but are present in the lookup data ");
+    
+    }
     // foreach producers  to get nsqd address
     zval *val;
     pid_t pid;
