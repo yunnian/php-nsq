@@ -277,23 +277,33 @@ PHP_METHOD (Nsq, subscribe)
         ZVAL_TRUE(auto_finish);
     }
 
-    char *lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
+    char *lookupd_re_str; 
+    zval * producers;
+    zval *message;
+    int producers_count;
+
+lookup:
+    lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
+
     if (*lookupd_re_str == '\0') {
         php_printf("request lookupd_addr error ,check your lookupd server\n");
         return;
     };
+
     php_json_decode(&lookupd_re, lookupd_re_str, strlen(lookupd_re_str), 1, PHP_JSON_PARSER_DEFAULT_DEPTH);
-    zval *producers = zend_hash_str_find(Z_ARRVAL(lookupd_re), "producers", sizeof("producers") - 1);
+    producers = zend_hash_str_find(Z_ARRVAL(lookupd_re), "producers", sizeof("producers") - 1);
     if (!producers) {
-        zval *message = zend_hash_str_find(Z_ARRVAL(lookupd_re), "message", sizeof("message") - 1);
+        message = zend_hash_str_find(Z_ARRVAL(lookupd_re), "message", sizeof("message") - 1);
         php_printf("%s\n", Z_STRVAL_P(message));
         return;
 
     }
 
-    int producers_count = zend_array_count(Z_ARRVAL_P(producers));
+    producers_count = zend_array_count(Z_ARRVAL_P(producers));
     if(producers_count < 1){
-        php_printf("%s\n", "the topic has not produced on any nsqd in the cluster but are present in the lookup data ");
+        php_printf("The topic '%s' has not produced on any nsqd in the cluster but are present in the lookup data. The program will be retried after 10 seconds \n",Z_STRVAL_P(topic));
+        sleep(10);
+        goto lookup;
     
     }
     // foreach producers  to get nsqd address
