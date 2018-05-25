@@ -133,20 +133,22 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev) use ($you_variable){
 <?php 
 
 $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
+    try{
+        echo $msg->payload . " " . "attempts:".$msg->attempts."\n";
+        //do something
+    }catch(Exception $e){
 
-    //do something , error or call something timeout ,you can retry your message:
-
-    if($msg->attempts < 3){
-        //the message will be retried after you configure retry_delay_time 
-        throw new Exception(""); 
-    }else{
-        return;
+        if($msg->attempts < 3){
+            //the message will be retried after you configure retry_delay_time 
+            throw new Exception(""); 
+        }else{
+            echo $e->getMessage();
+            return;
+        }
     }
 
 });
 ```
-
-
 
 
 3. `If your have strong consuming ability ,you can add you rdy num and connect num` <br/>
@@ -157,6 +159,8 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
     stopasgroup=true
     killasgroup=true
 ```
+
+5. `If your execution time is more than 1 minute, you should use 'touch()' function ` <br/>
     
 
 

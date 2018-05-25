@@ -16,7 +16,19 @@ $config = array(
 
 $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){
 
-    echo $msg->payload . " " . "attempts:".$msg->attempts."\n";
+    try{
+        echo $msg->payload . " " . "attempts:".$msg->attempts."\n";
+        //do something
+    }catch(Exception $e){
+
+        if($msg->attempts < 3){
+            //the message will be retried after you configure retry_delay_time 
+            throw new Exception(""); 
+        }else{
+            echo $e->getMessage();
+            return;
+        }
+    }
     //$msg->touch($bev,$msg->message_id); //if you callback run long time ,you can use this function 
 
 });
