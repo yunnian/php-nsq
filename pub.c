@@ -140,11 +140,12 @@ int publish(int sock, char *topic, char *msg) {
     }
 
     if (strcmp(message, "OK") == 0) {
+        free(message);
         return sock;
     } else {
+        free(message);
         return -1;
     }
-    free(message);
 }
 
 int deferredPublish(int sock, char *topic, char *msg, int defer_time) {

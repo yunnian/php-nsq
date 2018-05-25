@@ -185,7 +185,7 @@ PHP_METHOD (Nsq, publish)
     int re = publish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg));
     //zval_dtor(&rv3);
     //zval_ptr_dtor(msg);
-    zval_dtor(sock);
+    //zval_dtor(sock);
     if (re > 0) {
         RETURN_TRUE
     } else {
