@@ -109,7 +109,7 @@ extern int errno;
 int publish(int sock, char *topic, char *msg) {
     char buf[1024 * 1024];
     size_t n;
-    char *pub_command = malloc(strlen(topic) + strlen("PUB \n"));
+    char *pub_command = emalloc(strlen(topic) + strlen("PUB \n"));
     memset(pub_command, '\0', strlen(topic) + strlen("PUB \n"));
 
     sprintf(pub_command, "%s%s%s", "PUB ", topic, "\n");
@@ -119,9 +119,9 @@ int publish(int sock, char *topic, char *msg) {
     n = sprintf(&buf[strlen(pub_command) + 4], "%s", msg);
     int sendLen = strlen(pub_command) + strlen(msg) + 4;
     send(sock, buf, sendLen, 0);
-    free(pub_command);
+    efree(pub_command);
 
-    char *message = malloc(20);
+    char *message = emalloc(20);
     while (1) {
         memset(message, '\0', 20);
         int l = read(sock, message, 2);
@@ -140,10 +140,10 @@ int publish(int sock, char *topic, char *msg) {
     }
 
     if (strcmp(message, "OK") == 0) {
-        free(message);
+        efree(message);
         return sock;
     } else {
-        free(message);
+        efree(message);
         return -1;
     }
 }
