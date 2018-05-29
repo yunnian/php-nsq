@@ -109,8 +109,8 @@ extern int errno;
 int publish(int sock, char *topic, char *msg) {
     char buf[1024 * 1024];
     size_t n;
-    char *pub_command = emalloc(strlen(topic) + strlen("PUB \n"));
-    memset(pub_command, '\0', strlen(topic) + strlen("PUB \n"));
+    char *pub_command = emalloc(strlen(topic) + strlen("PUB \n") + 1);
+    memset(pub_command, 0x00, strlen(topic) + strlen("PUB \n"));
 
     sprintf(pub_command, "%s%s%s", "PUB ", topic, "\n");
     int len = htonl(strlen(msg));
