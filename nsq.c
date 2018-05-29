@@ -66,7 +66,25 @@ PHP_INI_END()
 /* Every user-visible function in PHP should document itself in the source */
 /* {{{ proto string confirm_nsq_compiled(string arg)
    Return a string to confirm that the module is compiled in */
+
 zend_class_entry *nsq_ce/*, *nsq_message_exception*/;
+
+PHP_METHOD(Nsq, __construct){
+    zval *self;
+    zval *nsq_config; //use send IDENTIFY comand
+    ZVAL_NULL(nsq_config);
+    self = getThis();
+    ZEND_PARSE_PARAMETERS_START(0,1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ZVAL(nsq_config)
+    ZEND_PARSE_PARAMETERS_END();
+
+    if(Z_TYPE_P(nsq_config) != IS_NULL){
+        zend_update_property(Z_OBJCE_P(self),self,ZEND_STRL("nsqConfig"), nsq_config TSRMLS_CC);
+    }
+}
+
+
 
 PHP_METHOD (Nsq, connectNsqd)
 {
@@ -406,6 +424,11 @@ static void php_nsq_init_globals(zend_nsq_globals *nsq_globals)
  *
  * Every user visible function must have an entry in nsq_functions[].
  */
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_ctor, 0, 0, -1)
+    ZEND_ARG_INFO(0, nsq_config)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_connect_nsqd, 0, 0, -1)
     ZEND_ARG_INFO(0, connect_addr_arr)
 ZEND_END_ARG_INFO()
@@ -436,6 +459,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_requeue, 0, 0, -1)
 ZEND_END_ARG_INFO()
 
 const zend_function_entry nsq_functions[] = {
+    PHP_ME(Nsq, __construct, arginfo_nsq_ctor, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
     PHP_ME(Nsq, connectNsqd, arginfo_nsq_connect_nsqd, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, closeNsqdConnection, arginfo_close_nsqd_connection, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
@@ -455,6 +479,7 @@ PHP_MINIT_FUNCTION (nsq)
     zend_class_entry nsq;
     INIT_CLASS_ENTRY(nsq, "Nsq", nsq_functions);
     nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
+    zend_declare_property_null(nsq_ce,ZEND_STRL("nsqConfig"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_ce, ZEND_STRL("nsqd_connection_fds"), ZEND_ACC_PUBLIC TSRMLS_CC);
     le_bufferevent = zend_register_list_destructors_ex(_php_bufferevent_dtor, NULL, "buffer event", module_number);
 
