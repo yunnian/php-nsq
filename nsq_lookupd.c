@@ -106,7 +106,7 @@ char *lookup(char *host, char *topic) {
 }
 
 char *request(char *url) {
-    char *msg = emalloc(512);
+    char *msg ;
     struct evhttp_uri *uri = evhttp_uri_parse(url);
     if (!uri) {
         fprintf(stderr, "parse url failed!\n");
