@@ -167,6 +167,11 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 Changes
 -------
+* **2.4.0**
+  * Fix pub bug
+  * Fix sub coredump 
+  * Fix touch bug
+  * add the waite,  when topic has no message
 * **2.3.1**
   * Support the domain host of pub
   * Fix pub coredump 
