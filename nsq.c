@@ -225,7 +225,6 @@ PHP_METHOD (Nsq, deferredPublish)
 
 PHP_METHOD (Nsq, subscribe)
 {
-    struct event_base *base = event_base_new();
     zend_fcall_info fci;
     zend_fcall_info_cache fcc;
     zval *config;

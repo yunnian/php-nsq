@@ -31,7 +31,6 @@
 
 #include <event.h>
 
-
 extern void error_handling(char *message);
 
 typedef struct {
@@ -94,7 +93,7 @@ void ConnectionCloseCallback(struct evhttp_connection *connection, void *arg) {
 }
 
 char *lookup(char *host, char *topic) {
-    char *url = emalloc(sizeof(host) + sizeof(topic) + 20);
+    char *url = emalloc(sizeof(host) + sizeof(topic) + 25);
     if (strstr(url, "http://")) {
         sprintf(url, "%s%s%s", host, "/lookup?topic=", topic);
     } else {
@@ -107,7 +106,7 @@ char *lookup(char *host, char *topic) {
 }
 
 char *request(char *url) {
-    char *msg;
+    char *msg = emalloc(512);
     struct evhttp_uri *uri = evhttp_uri_parse(url);
     if (!uri) {
         fprintf(stderr, "parse url failed!\n");
@@ -130,9 +129,10 @@ char *request(char *url) {
     }
     assert(dnsbase);
 
-    result re;
-    re.base = base;
-    struct evhttp_request *request = evhttp_request_new(FinshCallback, &re);
+    result * re  = (result * ) malloc ( sizeof(result) );
+    re->base = base;
+
+    struct evhttp_request *request = evhttp_request_new(FinshCallback, re);
     //evhttp_request_set_error_cb(request, RequestErrorCallback);
 
     const char *host = evhttp_uri_get_host(uri);
@@ -165,5 +165,5 @@ char *request(char *url) {
     evhttp_make_request(connection, request, EVHTTP_REQ_GET, request_url);
 
     event_base_dispatch(base);
-    return re.result;
+    return re->result;
 }
