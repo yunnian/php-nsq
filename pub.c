@@ -77,10 +77,10 @@ int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int c
             error_handlings("connect() error");
             sock_arr[i] = 0;
         }
-        char *msgs = (char *) malloc(4);
+        char *msgs = (char *) emalloc(4);
         memcpy(msgs, "  V2", 4);
         int r = write((sock_arr[i]), msgs, 4);
-        free(msgs);
+        efree(msgs);
     }
 
     zval fd_arr;
@@ -151,7 +151,7 @@ int publish(int sock, char *topic, char *msg) {
 int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
     char buf[1024 * 1024];
     size_t n;
-    char *pub_command = malloc(128);
+    char *pub_command = emalloc(128);
     int command_len = sprintf(pub_command, "%s%s%s%lld%s", "DPUB ", topic, " ", defer_time, "\n");
     int len = htonl(strlen(msg));
     //int  len = strlen(msg);
@@ -161,8 +161,8 @@ int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
     int sendLen = command_len + strlen(msg) + 4;
 
     send(sock, buf, sendLen, 0);
-    free(pub_command);
-    char *message = malloc(3);
+    efree(pub_command);
+    char *message = emalloc(3);
     while (1) {
         memset(message, '\0', 3);
 
@@ -179,8 +179,10 @@ int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
     }
 
     if (strcmp(message, "OK") == 0) {
+        efree(message);
         return sock;
     } else {
+        efree(message);
         return -1;
     }
 }
