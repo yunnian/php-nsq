@@ -2,6 +2,10 @@
 
 NSQ  client for php7 ; <br/>
 
+### QQ Group
+--------
+616063018
+
 
 ### intall :
 
@@ -162,10 +166,6 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 5. `If your execution time is more than 1 minute, you should use 'touch()' function ` <br/>
     
-
-QQ Group
---------
-616063018
 
 Changes
 -------
