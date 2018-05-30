@@ -2,9 +2,7 @@
 
 NSQ  client for php7 ; <br/>
 
-### QQ Group
---------
-616063018
+### QQ Group : 616063018<br/>
 
 
 ### intall :
