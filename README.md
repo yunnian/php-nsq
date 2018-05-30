@@ -163,7 +163,9 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 5. `If your execution time is more than 1 minute, you should use 'touch()' function ` <br/>
     
 
-
+QQ Group
+--------
+616063018
 
 Changes
 -------
@@ -192,6 +194,3 @@ Changes
   * fix c99 install error
   * license
 
-QQ Group
---------
-616063018
