@@ -5,7 +5,7 @@ NSQ  client for php7 .  QQ Group : 616063018<br/>
 
 ### intall :
 
-    Dependencies: libevent
+    Dependencies: libevent  (apt-get install libevent-dev ,yum install libevent-devel)
 
     1. sudo phpize
     2. ./configure 
