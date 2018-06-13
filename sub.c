@@ -238,10 +238,10 @@ void readcb(struct bufferevent *bev, void *arg) {
             zval_dtor(&payload);
             free(msg->body);
             free(message);
+            free(msg->message_id);
             l = 0;
             is_first = 1;
         }
-        free(msg->message_id);
     } else {
         return;
     }
