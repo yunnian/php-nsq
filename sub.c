@@ -141,10 +141,9 @@ void readcb(struct bufferevent *bev, void *arg) {
 
         message = malloc(msg->size + 1);
         memset(message, 0x00, msg->size);
-        //free(msg_size);
+        free(msg_size);
     }
 
-        //int current_len  = 0;
         l += bufferevent_read(bev, message + l, msg->size - l );
         if(l == 6){
             l = 0;
@@ -238,16 +237,14 @@ void readcb(struct bufferevent *bev, void *arg) {
             zval_dtor(&attempts);
             zval_dtor(&payload);
             free(msg->body);
+            free(message);
             l = 0;
             is_first = 1;
         }
         free(msg->message_id);
     } else {
         return;
-        //break;
     }
-    //free(message);
-//        free(msg_size);
     if (l == -1) {
         error_handlings("read() error");;
     }
