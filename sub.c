@@ -72,7 +72,7 @@ int subscribe(NSQArg *arg) {
     if (-1 == flag) {
 
         //printf("Connect failed retry:%d\n",retry_num );  
-        printf("Connect failed retryn");
+        printf("Connect failed retry");
         /*
         if(retry_num <= 10000){
             retry_num ++;
@@ -119,115 +119,137 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data) {
 }
 
 
+struct NSQMsg *msg ;
+int is_first = 1;
+int l = 0;
+char *message ;
+
 void readcb(struct bufferevent *bev, void *arg) {
-    struct NSQMsg *msg = ((struct NSQArg *) arg)->msg;
+    msg = ((struct NSQArg *) arg)->msg;
     int auto_finish = msg->auto_finish;
     //zval *nsq_object = ((struct NSQArg *)arg)->nsq_object;
     zend_fcall_info *fci = ((struct NSQArg *) arg)->fci;;
     zend_fcall_info_cache *fcc = ((struct NSQArg *) arg)->fcc;
     errno = 0;
     int i = 0;
-    while (1) {
 
+    if(is_first){
         char *msg_size = malloc(4);
         memset(msg_size, 0x00, 4);
         size_t size_l = bufferevent_read(bev, msg_size, 4);
         readI32((const unsigned char *) msg_size, &msg->size);
 
-        char *message = malloc(msg->size + 1);
+        message = malloc(msg->size + 1);
         memset(message, 0x00, msg->size);
-        int l = bufferevent_read(bev, message, msg->size);
-        if (errno) {
-            //printf("errno = %d\n", errno); // errno = 33
-            //printf("error: %s\n", strerror(errno));
+        //free(msg_size);
+    }
+
+        //int current_len  = 0;
+        l += bufferevent_read(bev, message + l, msg->size - l );
+        if(l == 6){
+            l = 0;
+            return;
         }
-        if (l) {
-            msg->message_id = (char *) malloc(17);
-            memset(msg->message_id, '\0', 17);
-            readI32((const unsigned char *) message, &msg->frame_type);
+
+        if(l < msg->size){
+            is_first = 0;
+            return;
+        }
+    
+    if (errno) {
+        //printf("errno = %d\n", errno); // errno = 33
+        //printf("error: %s\n", strerror(errno));
+    }
+    if (l == msg->size) {
+        msg->message_id = (char *) malloc(17);
+        memset(msg->message_id, '\0', 17);
+        readI32((const unsigned char *) message, &msg->frame_type);
 
 
-            if (msg->frame_type == 0) {
-                if (msg->size == 15) {
-                    bufferevent_write(bev, "NOP\n", strlen("NOP\n"));
-                }
-            } else if (msg->frame_type == 2) {
-                msg->timestamp = (int64_t) ntoh64((const unsigned char *) message + 4);
-                readI16((const unsigned char *) message + 12, &msg->attempts);
-                memcpy(msg->message_id, message + 14, 16);
-                msg->body = (char *) malloc(msg->size - 30 + 1);
-                memset(msg->body, '\0', msg->size - 30 + 1);
-                memcpy(msg->body, message + 30, msg->size - 30);
+        if (msg->frame_type == 0) {
+            if (msg->size == 15) {
+                bufferevent_write(bev, "NOP\n", strlen("NOP\n"));
+                l = 0;
+            }
+        } else if (msg->frame_type == 2) {
+            msg->timestamp = (int64_t) ntoh64((const unsigned char *) message + 4);
+            readI16((const unsigned char *) message + 12, &msg->attempts);
+            memcpy(msg->message_id, message + 14, 16);
+            msg->body = (char *) malloc(msg->size - 30 + 1);
+            memset(msg->body, '\0', msg->size - 30 + 1);
+            memcpy(msg->body, message + 30, msg->size - 30);
 
-                zval retval;
-                zval params[2];
-                zval msg_object;
-                zval message_id;
-                zval attempts;
-                zval payload;
-                zval timestamp;
+            zval retval;
+            zval params[2];
+            zval msg_object;
+            zval message_id;
+            zval attempts;
+            zval payload;
+            zval timestamp;
 
-                object_init_ex(&msg_object, nsq_message_ce);
+            object_init_ex(&msg_object, nsq_message_ce);
 
-                //message_id
-                zend_string *message_id_str = zend_string_init(msg->message_id, 16, 0);
-                ZVAL_STR_COPY(&message_id, message_id_str);
-                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("message_id"), &message_id TSRMLS_CC);
+            //message_id
+            zend_string *message_id_str = zend_string_init(msg->message_id, 16, 0);
+            ZVAL_STR_COPY(&message_id, message_id_str);
+            zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("message_id"), &message_id TSRMLS_CC);
 
-                //attempts
-                ZVAL_LONG(&attempts, msg->attempts);
-                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("attempts"), &attempts TSRMLS_CC);
-                //timestamp
-                ZVAL_LONG(&timestamp, msg->timestamp);
-                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("timestamp"), &timestamp TSRMLS_CC);
+            //attempts
+            ZVAL_LONG(&attempts, msg->attempts);
+            zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("attempts"), &attempts TSRMLS_CC);
+            //timestamp
+            ZVAL_LONG(&timestamp, msg->timestamp);
+            zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("timestamp"), &timestamp TSRMLS_CC);
 
-                //payload
-                zend_string *payload_str = zend_string_init(msg->body, msg->size - 30, 0);
-                ZVAL_STR_COPY(&payload, payload_str);
-                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("payload"), &payload TSRMLS_CC);
+            //payload
+            zend_string *payload_str = zend_string_init(msg->body, msg->size - 30, 0);
+            ZVAL_STR_COPY(&payload, payload_str);
+            zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("payload"), &payload TSRMLS_CC);
 
-                //call function
-                ZVAL_OBJ(&params[0], Z_OBJ(msg_object));
-                ZVAL_RES(&params[1], ((struct NSQArg *) arg)->bev_res);
-                fci->params = params;
-                fci->param_count = 2;
-                fci->retval = &retval;
-                if (zend_call_function(fci, fcc TSRMLS_CC) != SUCCESS) {
-                    php_printf("callback function call failed \n");
-                } else {
-                    if (auto_finish) {
-                        if (EG(exception)) {
-                            nsq_requeue(bev, msg->message_id, msg->delay_time);
-                            EG(exception) = NULL;
-                        }else{
-                            nsq_finish(bev, msg->message_id);
-                        }
+            //call function
+            ZVAL_OBJ(&params[0], Z_OBJ(msg_object));
+            ZVAL_RES(&params[1], ((struct NSQArg *) arg)->bev_res);
+            fci->params = params;
+            fci->param_count = 2;
+            fci->retval = &retval;
+            if (zend_call_function(fci, fcc TSRMLS_CC) != SUCCESS) {
+                php_printf("callback function call failed \n");
+            } else {
+                if (auto_finish) {
+                    if (EG(exception)) {
+                        nsq_requeue(bev, msg->message_id, msg->delay_time);
+                        EG(exception) = NULL;
+                    }else{
+                        nsq_finish(bev, msg->message_id);
                     }
                 }
-
-                //free memory
-                zval_dtor(&params[0]);
-                //zval_dtor(&params[1]);
-                zend_string_release(payload_str);
-                //zval_dtor(&msg_object);
-
-                zend_string_release(message_id_str);
-                zval_dtor(&timestamp);
-                zval_dtor(&retval);
-                zval_dtor(&message_id);
-                zval_dtor(&attempts);
-                zval_dtor(&payload);
-                free(msg->body);
             }
-            free(msg->message_id);
-        } else {
-            break;
+
+            //free memory
+            zval_dtor(&params[0]);
+            //zval_dtor(&params[1]);
+            zend_string_release(payload_str);
+            //zval_dtor(&msg_object);
+
+            zend_string_release(message_id_str);
+            zval_dtor(&timestamp);
+            zval_dtor(&retval);
+            zval_dtor(&message_id);
+            zval_dtor(&attempts);
+            zval_dtor(&payload);
+            free(msg->body);
+            l = 0;
+            is_first = 1;
         }
-        free(message);
-        free(msg_size);
-        if (l == -1) {
-            error_handlings("read() error");;
-        }
+        free(msg->message_id);
+    } else {
+        return;
+        //break;
+    }
+    //free(message);
+//        free(msg_size);
+    if (l == -1) {
+        error_handlings("read() error");;
     }
 
     //close(sock);
