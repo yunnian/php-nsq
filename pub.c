@@ -26,6 +26,37 @@
 #include "common.h"
 #include "ext/standard/php_var.h"
 #include <errno.h>
+#include <fcntl.h>
+#include "ext/standard/php_smart_string_public.h"
+#include "ext/json/php_json.h"
+#include "zend_smart_str.h"
+
+int send_identify(zval *nsq_obj, int sock)
+{
+    //IDENTIFY
+    zval * nsq_config;
+    zval rv3;
+    zval json;
+    nsq_config = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "nsqConfig", sizeof("nsqConfig")-1, 1, &rv3);
+
+    smart_str json_buf = {0};
+    if(Z_TYPE_P(nsq_config) != IS_NULL){
+        php_json_encode(&json_buf, nsq_config, 0) ;   
+        smart_str_0(&json_buf);
+        ZVAL_NEW_STR(&json,json_buf.s);
+        char * identify_command = emalloc(256);
+        memset(identify_command, '\0', 256);
+        int identify_len = sprintf(identify_command, "%s", "IDENTIFY\n");
+        uint32_t json_len = htonl(Z_STRLEN(json));
+        memcpy(identify_command + identify_len, &json_len, 4);
+        int len_2 = sprintf(identify_command + identify_len + 4, "%s", Z_STRVAL(json));
+        send(sock,identify_command, identify_len+Z_STRLEN(json)+4 ,0);  
+		efree(identify_command);
+    }
+	
+    zval_dtor(&json);
+    return 0;
+}
 
 extern void error_handlings(char *message);
 
@@ -77,9 +108,12 @@ int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int c
             error_handlings("connect() error");
             sock_arr[i] = 0;
         }
+        int flags = fcntl(sock_arr[i], F_GETFL, 0);
+        fcntl(sock_arr[i], F_SETFL, flags | O_NONBLOCK);
         char *msgs = (char *) emalloc(4);
         memcpy(msgs, "  V2", 4);
-        int r = write((sock_arr[i]), msgs, 4);
+        int r = send((sock_arr[i]), msgs, 4, MSG_DONTWAIT);
+		send_identify(nsq_obj, sock_arr[i]);
         efree(msgs);
     }
 
