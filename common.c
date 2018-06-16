@@ -16,8 +16,72 @@
 
 
 #include "common.h"
-#include "php.h"
 #include <arpa/inet.h>
+#include "ext/standard/php_var.h"
+#include "ext/standard/info.h"
+#include "ext/json/php_json.h"
+#include "ext/standard/php_string.h"
+#include "zend_smart_str.h"
+
+int send_identify(zval *nsq_obj, int sock)
+{
+    //IDENTIFY
+    zval * nsq_config;
+    zval rv3;
+    zval json;
+    nsq_config = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "nsqConfig", sizeof("nsqConfig")-1, 1, &rv3);
+
+    smart_str json_buf = {0};
+    if(Z_TYPE_P(nsq_config) != IS_NULL){
+        php_json_encode(&json_buf, nsq_config, 0) ;   
+        smart_str_0(&json_buf);
+        ZVAL_NEW_STR(&json,json_buf.s);
+        char * identify_command = emalloc(256);
+        memset(identify_command, '\0', 256);
+        int identify_len = sprintf(identify_command, "%s", "IDENTIFY\n");
+        uint32_t json_len = htonl(Z_STRLEN(json));
+        memcpy(identify_command + identify_len, &json_len, 4);
+        int len_2 = sprintf(identify_command + identify_len + 4, "%s", Z_STRVAL(json));
+        send(sock,identify_command, identify_len+Z_STRLEN(json)+4 ,0);  
+        zval *negotiation = zend_hash_str_find(Z_ARRVAL_P(nsq_config), "feature_negotiation", sizeof("feature_negotiation") - 1);
+
+
+        int l = 0;
+        int current_l = 0;
+        int msg_size;
+        char *message;
+        char *msg_size_char = malloc(4);
+        memset(msg_size_char, 0x00, 4);
+        int size;
+
+again_size:
+        size = read(sock, msg_size_char, 4);
+        printf("size_t %d",size);
+        if(size <= 0){
+            printf("读\n");
+            goto again_size;
+        }
+        readI32((const unsigned char *) msg_size_char, &msg_size);
+
+        free(msg_size_char);
+
+        message = emalloc(msg_size + 1);
+        memset(message, 0x00, msg_size);
+again:
+        l += read(sock, message +l , msg_size);
+        if( l < msg_size ){
+            goto again;
+        
+        }
+        printf("message_identify: %s\n",message+4);
+
+        efree(message);
+		efree(identify_command);
+    }
+	
+    zval_dtor(&json);
+    return 0;
+}
 
 int readI16(const unsigned char *pData, uint16_t *pValue) {
     *pValue = (pData[0] << 8) | pData[1];

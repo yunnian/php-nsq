@@ -31,33 +31,6 @@
 #include "ext/json/php_json.h"
 #include "zend_smart_str.h"
 
-int send_identify(zval *nsq_obj, int sock)
-{
-    //IDENTIFY
-    zval * nsq_config;
-    zval rv3;
-    zval json;
-    nsq_config = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "nsqConfig", sizeof("nsqConfig")-1, 1, &rv3);
-
-    smart_str json_buf = {0};
-    if(Z_TYPE_P(nsq_config) != IS_NULL){
-        php_json_encode(&json_buf, nsq_config, 0) ;   
-        smart_str_0(&json_buf);
-        ZVAL_NEW_STR(&json,json_buf.s);
-        char * identify_command = emalloc(256);
-        memset(identify_command, '\0', 256);
-        int identify_len = sprintf(identify_command, "%s", "IDENTIFY\n");
-        uint32_t json_len = htonl(Z_STRLEN(json));
-        memcpy(identify_command + identify_len, &json_len, 4);
-        int len_2 = sprintf(identify_command + identify_len + 4, "%s", Z_STRVAL(json));
-        send(sock,identify_command, identify_len+Z_STRLEN(json)+4 ,0);  
-		efree(identify_command);
-    }
-	
-    zval_dtor(&json);
-    return 0;
-}
-
 extern void error_handlings(char *message);
 
 int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int connect_num) {
@@ -154,32 +127,42 @@ int publish(int sock, char *topic, char *msg) {
     int sendLen = strlen(pub_command) + strlen(msg) + 4;
     send(sock, buf, sendLen, 0);
     efree(pub_command);
+    int l = 0;
+    int current_l = 0;
+    int msg_size;
+    char *message;
+    char *msg_size_char = malloc(4);
+    memset(msg_size_char, 0x00, 4);
+    int size;
 
-    char *message = emalloc(20);
-    while (1) {
-        memset(message, '\0', 20);
-        int l = read(sock, message, 2);
-        if (strcmp(message, "OK") == 0) {
-            break;
-            // read heartbeat
-        } else if (strcmp(message, "_h") == 0) {
-            int l = read(sock, message, 9);
-            break;
-
-        }
-        if (l == 0) {
-            fprintf(stderr, "Value of errno: %d\n", errno);
-            break;
-        }
+again_size:
+    size = read(sock, msg_size_char, 4);
+    printf("size_t %d",size);
+    if(size <= 0){
+        printf("读\n");
+        goto again_size;
     }
+    readI32((const unsigned char *) msg_size_char, &msg_size);
 
-    if (strcmp(message, "OK") == 0) {
-        efree(message);
+    free(msg_size_char);
+
+    message = emalloc(msg_size + 1);
+    memset(message, 0x00, msg_size);
+again:
+    l += read(sock, message +l , msg_size);
+    if( l < msg_size ){
+        goto again;
+    
+    }
+    printf("message_identify: %s\n",message+4);
+    efree(message);
+
+    if (strcmp(message+4, "OK") == 0) {
         return sock;
     } else {
-        efree(message);
         return -1;
     }
+
 }
 
 int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
@@ -196,27 +179,40 @@ int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
 
     send(sock, buf, sendLen, 0);
     efree(pub_command);
-    char *message = emalloc(3);
-    while (1) {
-        memset(message, '\0', 3);
 
-        int l = read(sock, message, 2);
-        if (strcmp(message, "OK") == 0) {
-            break;
-        } else if (strcmp(message, "_h") == 0) {
-            int l = read(sock, message, 9);
-            break;
-        }
-        if (l == 0) {
-            break;
-        }
+    int l = 0;
+    int current_l = 0;
+    int msg_size;
+    char *message;
+    char *msg_size_char = malloc(4);
+    memset(msg_size_char, 0x00, 4);
+    int size;
+
+again_size:
+    size = read(sock, msg_size_char, 4);
+    printf("size_t %d",size);
+    if(size <= 0){
+        printf("读\n");
+        goto again_size;
     }
+    readI32((const unsigned char *) msg_size_char, &msg_size);
 
-    if (strcmp(message, "OK") == 0) {
-        efree(message);
+    free(msg_size_char);
+
+    message = emalloc(msg_size + 1);
+    memset(message, 0x00, msg_size);
+again:
+    l += read(sock, message +l , msg_size);
+    if( l < msg_size ){
+        goto again;
+    
+    }
+    printf("message_identify: %s\n",message+4);
+    efree(message);
+
+    if (strcmp(message+4, "OK") == 0) {
         return sock;
     } else {
-        efree(message);
         return -1;
     }
 }

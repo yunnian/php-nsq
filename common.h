@@ -17,6 +17,7 @@
 #ifndef STRUGGLE_NSQ_COMMON_H
 #define STRUGGLE_NSQ_COMMON_H
 #include <stdint.h>
+#include "php.h"
 
 int readI16(const unsigned char *pData, uint16_t *pValue); 
 
@@ -27,5 +28,7 @@ int readI64(const unsigned char *data, int64_t *pValue);
 uint64_t ntoh64(const uint8_t *data); 
 
 int check_ipaddr(const char *ip);
+
+int send_identify(zval *nsq_obj, int sock);
 
 #endif //STRUGGLE_NSQ_SUB_CLIENT_H
