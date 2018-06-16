@@ -26,6 +26,10 @@
 #include "common.h"
 #include "ext/standard/php_var.h"
 #include <errno.h>
+#include <fcntl.h>
+#include "ext/standard/php_smart_string_public.h"
+#include "ext/json/php_json.h"
+#include "zend_smart_str.h"
 
 extern void error_handlings(char *message);
 
@@ -77,9 +81,12 @@ int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int c
             error_handlings("connect() error");
             sock_arr[i] = 0;
         }
+        int flags = fcntl(sock_arr[i], F_GETFL, 0);
+        fcntl(sock_arr[i], F_SETFL, flags | O_NONBLOCK);
         char *msgs = (char *) emalloc(4);
         memcpy(msgs, "  V2", 4);
-        int r = write((sock_arr[i]), msgs, 4);
+        int r = send((sock_arr[i]), msgs, 4, MSG_DONTWAIT);
+		send_identify(nsq_obj, sock_arr[i]);
         efree(msgs);
     }
 
@@ -120,32 +127,38 @@ int publish(int sock, char *topic, char *msg) {
     int sendLen = strlen(pub_command) + strlen(msg) + 4;
     send(sock, buf, sendLen, 0);
     efree(pub_command);
+    int l = 0;
+    int current_l = 0;
+    int msg_size;
+    char *message;
+    char *msg_size_char = malloc(4);
+    memset(msg_size_char, 0x00, 4);
+    int size;
 
-    char *message = emalloc(20);
-    while (1) {
-        memset(message, '\0', 20);
-        int l = read(sock, message, 2);
-        if (strcmp(message, "OK") == 0) {
-            break;
-            // read heartbeat
-        } else if (strcmp(message, "_h") == 0) {
-            int l = read(sock, message, 9);
-            break;
-
-        }
-        if (l == 0) {
-            fprintf(stderr, "Value of errno: %d\n", errno);
-            break;
-        }
+again_size:
+    size = read(sock, msg_size_char, 4);
+    if(size <= 0){
+        goto again_size;
     }
+    readI32((const unsigned char *) msg_size_char, &msg_size);
 
-    if (strcmp(message, "OK") == 0) {
-        efree(message);
+    free(msg_size_char);
+
+    message = emalloc(msg_size + 1);
+    memset(message, 0x00, msg_size);
+again:
+    l += read(sock, message +l , msg_size);
+    if( l < msg_size ){
+        goto again;
+    
+    }
+    efree(message);
+    if (strcmp(message + 4, "OK") == 0) {
         return sock;
     } else {
-        efree(message);
         return -1;
     }
+
 }
 
 int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
@@ -162,27 +175,37 @@ int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
 
     send(sock, buf, sendLen, 0);
     efree(pub_command);
-    char *message = emalloc(3);
-    while (1) {
-        memset(message, '\0', 3);
 
-        int l = read(sock, message, 2);
-        if (strcmp(message, "OK") == 0) {
-            break;
-        } else if (strcmp(message, "_h") == 0) {
-            int l = read(sock, message, 9);
-            break;
-        }
-        if (l == 0) {
-            break;
-        }
+    int l = 0;
+    int current_l = 0;
+    int msg_size;
+    char *message;
+    char *msg_size_char = malloc(4);
+    memset(msg_size_char, 0x00, 4);
+    int size;
+
+again_size:
+    size = read(sock, msg_size_char, 4);
+    if(size <= 0){
+        goto again_size;
     }
+    readI32((const unsigned char *) msg_size_char, &msg_size);
 
-    if (strcmp(message, "OK") == 0) {
-        efree(message);
+    free(msg_size_char);
+
+    message = emalloc(msg_size + 1);
+    memset(message, 0x00, msg_size);
+again:
+    l += read(sock, message +l , msg_size);
+    if( l < msg_size ){
+        goto again;
+    
+    }
+    efree(message);
+
+    if (strcmp(message + 4, "OK") == 0) {
         return sock;
     } else {
-        efree(message);
         return -1;
     }
 }

@@ -38,6 +38,7 @@ typedef struct NSQArg {
     const char *port;
     zend_fcall_info *fci;
     zend_fcall_info_cache *fcc;
+    zval *nsq_obj;
 } NSQArg;
 
 //param is the nsqlookeupd's ip and port ,return the socket fd

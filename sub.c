@@ -106,12 +106,14 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data) {
         struct NSQMsg *msg = ((struct NSQArg *) user_data)->msg;
         char *v = (char *) malloc(4);
         memcpy(v, "  V2", 4);
-        bufferevent_write(bev, v, 4);
+        evutil_socket_t fd = bufferevent_getfd(bev);
+        int res = write(fd, v, 4);
         free(v);
+        send_identify(((struct NSQArg *) user_data)->nsq_obj, fd);
 
         nsq_subscribe(bev, msg->topic, msg->channel);
-
         nsq_ready(bev, msg->rdy);
+
         return;
     }
 
@@ -134,47 +136,47 @@ void readcb(struct bufferevent *bev, void *arg) {
     int i = 0;
 
     if(is_first){
-        char *msg_size = malloc(4);
+        char *msg_size = emalloc(4);
         memset(msg_size, 0x00, 4);
         size_t size_l = bufferevent_read(bev, msg_size, 4);
         readI32((const unsigned char *) msg_size, &msg->size);
 
-        message = malloc(msg->size + 1);
+        message = emalloc(msg->size + 1);
         memset(message, 0x00, msg->size);
-        free(msg_size);
+        efree(msg_size);
     }
 
-        l += bufferevent_read(bev, message + l, msg->size - l );
-        if(l == 6){
-            l = 0;
-            return;
-        }
+    l += bufferevent_read(bev, message + l, msg->size - l );
 
-        if(l < msg->size){
-            is_first = 0;
-            return;
-        }
+    if(l < msg->size){
+        is_first = 0;
+        return;
+    }
     
     if (errno) {
         //printf("errno = %d\n", errno); // errno = 33
         //printf("error: %s\n", strerror(errno));
     }
     if (l == msg->size) {
-        msg->message_id = (char *) malloc(17);
+        msg->message_id = (char *) emalloc(17);
         memset(msg->message_id, '\0', 17);
         readI32((const unsigned char *) message, &msg->frame_type);
 
-
         if (msg->frame_type == 0) {
+            // this is heartbeat
             if (msg->size == 15) {
                 bufferevent_write(bev, "NOP\n", strlen("NOP\n"));
-                l = 0;
+            // this is response  OK
+            }else if (msg->size == 6){
+                //nothing
             }
+            l = 0;
+            return;
         } else if (msg->frame_type == 2) {
             msg->timestamp = (int64_t) ntoh64((const unsigned char *) message + 4);
             readI16((const unsigned char *) message + 12, &msg->attempts);
             memcpy(msg->message_id, message + 14, 16);
-            msg->body = (char *) malloc(msg->size - 30 + 1);
+            msg->body = (char *) emalloc(msg->size - 30 + 1);
             memset(msg->body, '\0', msg->size - 30 + 1);
             memcpy(msg->body, message + 30, msg->size - 30);
 
@@ -236,9 +238,9 @@ void readcb(struct bufferevent *bev, void *arg) {
             zval_dtor(&message_id);
             zval_dtor(&attempts);
             zval_dtor(&payload);
-            free(msg->body);
-            free(message);
-            free(msg->message_id);
+            efree(msg->body);
+            efree(message);
+            efree(msg->message_id);
             l = 0;
             is_first = 1;
         }

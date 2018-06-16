@@ -150,21 +150,35 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 });
 ```
 
+3. `If you want to increase your message timeout and heartbeats time ,Two steps are needed: ` <br/>
+```
+    #1 when nsqd startup you should set command line option:
 
-3. `If your have strong consuming ability ,you can add you rdy num and connect num` <br/>
+    nsqd --lookupd-tcp-address=127.0.0.1:4160 --max-heartbeat-interval=1m30s --msg-timeout=10m30s
 
 
-4. `You can use supervisor to supervise process,The following configuration needs to be added to the supervisor configuration file: ` <br/>
+    #2 And , you should use identify config. For details, see the identify example file.
+    
+
+```
+
+4. `If your have strong consuming ability ,you can add you rdy num and connect num` <br/>
+
+
+5. `You can use supervisor to supervise process,The following configuration needs to be added to the supervisor configuration file: ` <br/>
 ```
     stopasgroup=true
     killasgroup=true
 ```
 
-5. `If your execution time is more than 1 minute, you should use 'touch()' function ` <br/>
+6. `If your execution time is more than 1 minute, you should use 'touch()' function ` <br/>
     
 
 Changes
 -------
+* **3.0**
+  * Fix libevent more than 4096 bytes are truncated
+  * add the identify command,can use be set or increase heartbeats time and msg-timeout
 * **2.4.0**
   * Fix pub bug
   * Fix sub coredump 
