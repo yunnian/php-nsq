@@ -150,7 +150,7 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 });
 ```
 
-3. `If you want to add your message timeout and heartbeats ,Two steps are needed: ` <br/>
+3. `If you want to increase your message timeout and heartbeats ,Two steps are needed: ` <br/>
 ```
     #1 when nsqd startup you should set command line option:
 
@@ -176,6 +176,9 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 Changes
 -------
+* **3.0**
+  * Fix libevent more than 4096 bytes are truncated
+  * add the identify command,can use be set or increase heartbeats time and msg-timeout
 * **2.4.0**
   * Fix pub bug
   * Fix sub coredump 
