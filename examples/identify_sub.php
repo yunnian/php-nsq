@@ -37,7 +37,6 @@ $config = array(
 $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){
 
     try{
-    sleep(100);
         echo $msg->payload . " " . "attempts:".$msg->attempts."\n";
         //do something
     }catch(Exception $e){
