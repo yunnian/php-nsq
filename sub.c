@@ -109,7 +109,7 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data) {
         evutil_socket_t fd = bufferevent_getfd(bev);
         int res = write(fd, v, 4);
         free(v);
-		send_identify(((struct NSQArg *) user_data)->nsq_obj, fd);
+        send_identify(((struct NSQArg *) user_data)->nsq_obj, fd);
 
         nsq_subscribe(bev, msg->topic, msg->channel);
         nsq_ready(bev, msg->rdy);
