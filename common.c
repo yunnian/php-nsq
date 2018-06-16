@@ -56,9 +56,7 @@ int send_identify(zval *nsq_obj, int sock)
 
 again_size:
         size = read(sock, msg_size_char, 4);
-        printf("size_t %d",size);
         if(size <= 0){
-            printf("读\n");
             goto again_size;
         }
         readI32((const unsigned char *) msg_size_char, &msg_size);
@@ -73,7 +71,6 @@ again:
             goto again;
         
         }
-        printf("message_identify: %s\n",message+4);
 
         efree(message);
 		efree(identify_command);

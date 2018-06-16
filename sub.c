@@ -145,22 +145,13 @@ void readcb(struct bufferevent *bev, void *arg) {
         memset(message, 0x00, msg->size);
         efree(msg_size);
     }
-    printf("msg->size%d\n",msg->size);
-    printf("前l%d\n",l);
 
-        l += bufferevent_read(bev, message + l, msg->size - l );
-    printf("后l%d\n",l);
-    /*
-        if(l == 6){
-            l = 0;
-            return;
-        }
-        */
+    l += bufferevent_read(bev, message + l, msg->size - l );
 
-        if(l < msg->size){
-            is_first = 0;
-            return;
-        }
+    if(l < msg->size){
+        is_first = 0;
+        return;
+    }
     
     if (errno) {
         //printf("errno = %d\n", errno); // errno = 33
@@ -171,15 +162,13 @@ void readcb(struct bufferevent *bev, void *arg) {
         memset(msg->message_id, '\0', 17);
         readI32((const unsigned char *) message, &msg->frame_type);
 
-
-        printf("msg->type%d\n",msg->frame_type);
         if (msg->frame_type == 0) {
             // this is heartbeat
             if (msg->size == 15) {
                 bufferevent_write(bev, "NOP\n", strlen("NOP\n"));
             // this is response  OK
             }else if (msg->size == 6){
-                printf("message_sub_resp:%s\n", message + 4);
+                //nothing
             }
             l = 0;
             return;

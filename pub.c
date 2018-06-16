@@ -137,9 +137,7 @@ int publish(int sock, char *topic, char *msg) {
 
 again_size:
     size = read(sock, msg_size_char, 4);
-    printf("size_t %d",size);
     if(size <= 0){
-        printf("读\n");
         goto again_size;
     }
     readI32((const unsigned char *) msg_size_char, &msg_size);
@@ -154,10 +152,8 @@ again:
         goto again;
     
     }
-    printf("message_identify: %s\n",message+4);
     efree(message);
-
-    if (strcmp(message+4, "OK") == 0) {
+    if (strcmp(message + 4, "OK") == 0) {
         return sock;
     } else {
         return -1;
@@ -190,9 +186,7 @@ int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
 
 again_size:
     size = read(sock, msg_size_char, 4);
-    printf("size_t %d",size);
     if(size <= 0){
-        printf("读\n");
         goto again_size;
     }
     readI32((const unsigned char *) msg_size_char, &msg_size);
@@ -207,10 +201,9 @@ again:
         goto again;
     
     }
-    printf("message_identify: %s\n",message+4);
     efree(message);
 
-    if (strcmp(message+4, "OK") == 0) {
+    if (strcmp(message + 4, "OK") == 0) {
         return sock;
     } else {
         return -1;
