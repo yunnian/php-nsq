@@ -150,7 +150,7 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 });
 ```
 
-3. `If you want to increase your message timeout and heartbeats ,Two steps are needed: ` <br/>
+3. `If you want to increase your message timeout and heartbeats time ,Two steps are needed: ` <br/>
 ```
     #1 when nsqd startup you should set command line option:
 
