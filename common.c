@@ -74,9 +74,9 @@ again:
 
         efree(message);
         efree(identify_command);
+        zval_ptr_dtor(&json);
     }
 	
-    zval_dtor(&json);
     return 0;
 }
 
