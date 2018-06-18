@@ -83,7 +83,6 @@ PHP_METHOD(Nsq, __construct){
     if(Z_TYPE_P(nsq_config) != IS_NULL){
         zend_update_property(Z_OBJCE_P(self),self,ZEND_STRL("nsqConfig"), nsq_config TSRMLS_CC);
     }
-    efree(nsq_config);
 }
 
 
