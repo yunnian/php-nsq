@@ -71,7 +71,8 @@ zend_class_entry *nsq_ce/*, *nsq_message_exception*/;
 
 PHP_METHOD(Nsq, __construct){
     zval *self;
-    zval *nsq_config; //use send IDENTIFY comand
+    zval *nsq_config  = (zval *)emalloc(sizeof(zval)); //use send IDENTIFY comand
+    bzero(nsq_config, sizeof(zval));
     ZVAL_NULL(nsq_config);
     self = getThis();
     ZEND_PARSE_PARAMETERS_START(0,1)
@@ -82,6 +83,7 @@ PHP_METHOD(Nsq, __construct){
     if(Z_TYPE_P(nsq_config) != IS_NULL){
         zend_update_property(Z_OBJCE_P(self),self,ZEND_STRL("nsqConfig"), nsq_config TSRMLS_CC);
     }
+    efree(nsq_config);
 }
 
 
