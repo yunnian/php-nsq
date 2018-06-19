@@ -134,123 +134,138 @@ void readcb(struct bufferevent *bev, void *arg) {
     zend_fcall_info_cache *fcc = ((struct NSQArg *) arg)->fcc;
     errno = 0;
     int i = 0;
+    while (1){
 
-    if(is_first){
-        char *msg_size = emalloc(4);
-        memset(msg_size, 0x00, 4);
-        size_t size_l = bufferevent_read(bev, msg_size, 4);
-        readI32((const unsigned char *) msg_size, &msg->size);
+        if(is_first){
+            char *msg_size = emalloc(4);
+            memset(msg_size, 0x00, 4);
+            size_t size_l = bufferevent_read(bev, msg_size, 4);
+            readI32((const unsigned char *) msg_size, &msg->size);
 
-        message = emalloc(msg->size + 1);
-        memset(message, 0x00, msg->size);
-        efree(msg_size);
-    }
+            message = emalloc(msg->size + 1);
+            memset(message, 0x00, msg->size);
+            efree(msg_size);
+        }
 
-    l += bufferevent_read(bev, message + l, msg->size - l );
+        l += bufferevent_read(bev, message + l, msg->size - l );
 
-    if(l < msg->size){
-        is_first = 0;
-        return;
-    }
-    
-    if (errno) {
-        //printf("errno = %d\n", errno); // errno = 33
-        //printf("error: %s\n", strerror(errno));
-    }
-    if (l == msg->size) {
-        msg->message_id = (char *) emalloc(17);
-        memset(msg->message_id, '\0', 17);
-        readI32((const unsigned char *) message, &msg->frame_type);
+        if(l < msg->size){
+            
+            is_first = 0;
+            break;
+        }
+        
+        if (errno) {
+            //printf("errno = %d\n", errno); // errno = 33
+            //printf("error: %s\n", strerror(errno));
+        }
+        if (l == msg->size) {
+            readI32((const unsigned char *) message, &msg->frame_type);
 
-        if (msg->frame_type == 0) {
-            // this is heartbeat
-            if (msg->size == 15) {
-                bufferevent_write(bev, "NOP\n", strlen("NOP\n"));
-            // this is response  OK
-            }else if (msg->size == 6){
-                //nothing
-            }
-            l = 0;
-            return;
-        } else if (msg->frame_type == 2) {
-            msg->timestamp = (int64_t) ntoh64((const unsigned char *) message + 4);
-            readI16((const unsigned char *) message + 12, &msg->attempts);
-            memcpy(msg->message_id, message + 14, 16);
-            msg->body = (char *) emalloc(msg->size - 30 + 1);
-            memset(msg->body, '\0', msg->size - 30 + 1);
-            memcpy(msg->body, message + 30, msg->size - 30);
+            if (msg->frame_type == 0) {
+                // this is heartbeat
+                if (msg->size == 15) {
+                    bufferevent_write(bev, "NOP\n", strlen("NOP\n"));
+                // this is response  OK
+                }else if (msg->size == 6){
+                    //nothing
+                }
+                l = 0;
+                is_first = 1;
+                memset(&msg->size, 0x00, 4);
+                efree(message);
+                break;
+            } else if (msg->frame_type == 2) {
 
-            zval retval;
-            zval params[2];
-            zval msg_object;
-            zval message_id;
-            zval attempts;
-            zval payload;
-            zval timestamp;
+                msg->message_id = (char *) emalloc(17);
+                memset(msg->message_id, '\0', 17);
 
-            object_init_ex(&msg_object, nsq_message_ce);
+                msg->timestamp = (int64_t) ntoh64((const unsigned char *) message + 4);
+                readI16((const unsigned char *) message + 12, &msg->attempts);
 
-            //message_id
-            zend_string *message_id_str = zend_string_init(msg->message_id, 16, 0);
-            ZVAL_STR_COPY(&message_id, message_id_str);
-            zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("message_id"), &message_id TSRMLS_CC);
+                memcpy(msg->message_id, message + 14, 16);
 
-            //attempts
-            ZVAL_LONG(&attempts, msg->attempts);
-            zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("attempts"), &attempts TSRMLS_CC);
-            //timestamp
-            ZVAL_LONG(&timestamp, msg->timestamp);
-            zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("timestamp"), &timestamp TSRMLS_CC);
+                msg->body = (char *) emalloc(msg->size - 30 + 1);
+                memset(msg->body, '\0', msg->size - 30 + 1);
+                memcpy(msg->body, message + 30, msg->size - 30);
 
-            //payload
-            zend_string *payload_str = zend_string_init(msg->body, msg->size - 30, 0);
-            ZVAL_STR_COPY(&payload, payload_str);
-            zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("payload"), &payload TSRMLS_CC);
+                zval retval;
+                zval params[2];
+                zval msg_object;
+                zval message_id;
+                zval attempts;
+                zval payload;
+                zval timestamp;
 
-            //call function
-            ZVAL_OBJ(&params[0], Z_OBJ(msg_object));
-            ZVAL_RES(&params[1], ((struct NSQArg *) arg)->bev_res);
-            fci->params = params;
-            fci->param_count = 2;
-            fci->retval = &retval;
-            if (zend_call_function(fci, fcc TSRMLS_CC) != SUCCESS) {
-                php_printf("callback function call failed \n");
-            } else {
-                if (auto_finish) {
-                    if (EG(exception)) {
-                        nsq_requeue(bev, msg->message_id, msg->delay_time);
-                        EG(exception) = NULL;
-                    }else{
-                        nsq_finish(bev, msg->message_id);
+                object_init_ex(&msg_object, nsq_message_ce);
+
+                //message_id
+                zend_string *message_id_str = zend_string_init(msg->message_id, 16, 0);
+                ZVAL_STR_COPY(&message_id, message_id_str);
+                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("message_id"), &message_id TSRMLS_CC);
+
+                //attempts
+                ZVAL_LONG(&attempts, msg->attempts);
+                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("attempts"), &attempts TSRMLS_CC);
+                //timestamp
+                ZVAL_LONG(&timestamp, msg->timestamp);
+                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("timestamp"), &timestamp TSRMLS_CC);
+
+                //payload
+                zend_string *payload_str = zend_string_init(msg->body, msg->size - 30, 0);
+                ZVAL_STR_COPY(&payload, payload_str);
+                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("payload"), &payload TSRMLS_CC);
+
+                //call function
+                ZVAL_OBJ(&params[0], Z_OBJ(msg_object));
+                ZVAL_RES(&params[1], ((struct NSQArg *) arg)->bev_res);
+                fci->params = params;
+                fci->param_count = 2;
+                fci->retval = &retval;
+                if (zend_call_function(fci, fcc TSRMLS_CC) != SUCCESS) {
+                    php_printf("callback function call failed \n");
+                } else {
+                    if (auto_finish) {
+                        if (EG(exception)) {
+                            nsq_requeue(bev, msg->message_id, msg->delay_time);
+                            EG(exception) = NULL;
+                        }else{
+                            nsq_finish(bev, msg->message_id);
+                        }
                     }
                 }
+
+                //free memory
+                zval_dtor(&params[0]);
+                //zval_dtor(&params[1]);
+                zend_string_release(payload_str);
+                //zval_dtor(&msg_object);
+
+                zend_string_release(message_id_str);
+                zval_dtor(&timestamp);
+                zval_dtor(&retval);
+                zval_dtor(&message_id);
+                zval_dtor(&attempts);
+                zval_dtor(&payload);
+                memset(&msg->size, 0x00, 4);
+                efree(msg->body);
+                efree(message);
+                efree(msg->message_id);
+                l = 0;
+                is_first = 1;
             }
-
-            //free memory
-            zval_dtor(&params[0]);
-            //zval_dtor(&params[1]);
-            zend_string_release(payload_str);
-            //zval_dtor(&msg_object);
-
-            zend_string_release(message_id_str);
-            zval_dtor(&timestamp);
-            zval_dtor(&retval);
-            zval_dtor(&message_id);
-            zval_dtor(&attempts);
-            zval_dtor(&payload);
-            efree(msg->body);
+        } else {
+            memset(&msg->size, 0x00, 4);
             efree(message);
-            efree(msg->message_id);
             l = 0;
             is_first = 1;
+            break;
         }
-    } else {
-        return;
-    }
-    if (l == -1) {
-        error_handlings("read() error");;
-    }
+        if (l == -1) {
+            error_handlings("read() error");;
+        }
 
+    }
     //close(sock);
 
     //return 0;
