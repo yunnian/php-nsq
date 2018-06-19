@@ -74,7 +74,7 @@ again:
 
         efree(message);
         efree(identify_command);
-        efree(nsq_config);
+        zval_ptr_dtor(nsq_config);
         zval_ptr_dtor(&json);
     }
 	
