@@ -15,9 +15,9 @@
         <email>wuzhenyu7758@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2018-03-22</date>
+    <date>2018-06-21</date>
     <version>
-        <release>2.3.2</release>
+        <release>3.0</release>
         <api>2.0.0</api>
     </version>
     <stability>
@@ -26,9 +26,8 @@
     </stability>
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
-        * Add function which use of  pub connection close
-        * Fix sub coredump
-        * pecl init
+        *Fix libevent more than 4096 bytes are truncated
+        *add the identify command,can use be set or increase heartbeats time and msg-timeout
     </notes>
     <contents>
         <dir name="/">
