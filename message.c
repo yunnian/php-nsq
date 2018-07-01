@@ -71,6 +71,7 @@ void message_init(){
     INIT_CLASS_ENTRY(nsq_message,"NsqMessage",nsq_message_functions);
     nsq_message_ce = zend_register_internal_class(&nsq_message TSRMLS_CC);
     zend_declare_property_null(nsq_message_ce,ZEND_STRL("message_id"),ZEND_ACC_PUBLIC TSRMLS_CC);
+    zend_declare_property_null(nsq_message_ce,ZEND_STRL("messageId"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_message_ce,ZEND_STRL("timestamp"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_message_ce,ZEND_STRL("attempts"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_message_ce,ZEND_STRL("payload"),ZEND_ACC_PUBLIC TSRMLS_CC);

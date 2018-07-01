@@ -65,10 +65,10 @@ $config = array(
 
 $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){ 
 
-    echo $msg->payload;
-    echo $msg->attempts;
-    echo $msg->message_id;
-    echo $msg->timestamp;
+    echo $msg->payload."\n";
+    echo $msg->attempts."\n";
+    echo $msg->messageId."\n";
+    echo $msg->timestamp."\n";
 
 
 });

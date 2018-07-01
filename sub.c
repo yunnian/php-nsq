@@ -208,6 +208,7 @@ void readcb(struct bufferevent *bev, void *arg) {
                 zend_string *message_id_str = zend_string_init(msg->message_id, 16, 0);
                 ZVAL_STR_COPY(&message_id, message_id_str);
                 zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("message_id"), &message_id TSRMLS_CC);
+                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("messageId"), &message_id TSRMLS_CC);
 
                 //attempts
                 ZVAL_LONG(&attempts, msg->attempts);
