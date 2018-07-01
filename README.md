@@ -97,13 +97,13 @@ instance.
   Numeric timestamp for the Message provided by nsqd.
 * `attempts` <br/>
   The number of attempts that have been made to process this message.
-* `message_id` <br/>
+* `messageId` <br/>
   The opaque string id for the Message provided by nsqd.
 * `payload` <br/>
   The message payload as a Buffer object.
-* `finish($bev,$msg->message_id)` <br/>
+* `finish($bev,$msg->messageId)` <br/>
   Finish the message as successful.
-* `touch($bev,$msg->message_id)` <br/>
+* `touch($bev,$msg->messageId)` <br/>
   Tell nsqd that you want extra time to process the message. It extends the
   soft timeout by the normal timeout amount.
 
@@ -118,10 +118,6 @@ instance.
 $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev) use ($you_variable){ 
 
     echo $msg->payload;
-    echo $msg->attempts;
-    echo $msg->message_id;
-    echo $msg->timestamp;
-
 
 });
 ```
@@ -176,6 +172,9 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 Changes
 -------
+* **3.1.0**
+  * Fix memmory wrong
+  * Fix subscribe  wrong 
 * **3.0**
   * Fix libevent more than 4096 bytes are truncated
   * add the identify command,can use be set or increase heartbeats time and msg-timeout
