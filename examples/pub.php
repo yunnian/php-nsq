@@ -1,7 +1,7 @@
 <?php 
 //the nsqd tcp addr that you want to publish
 $nsqdAddr = array(
-    "127.0.0.1:4150",
+    "127.0.0.1:4150", //tcp addr 
     "127.0.0.1:4154",
 );
 $nsq = new Nsq();

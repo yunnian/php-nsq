@@ -172,8 +172,13 @@ void readcb(struct bufferevent *bev, void *arg) {
                 }
                 l = 0;
                 is_first = 1;
-                memset(&msg->size, 0x00, 4);
                 efree(message);
+                if(msg->size !=0){
+                    memset(&msg->size, 0x00, 4);
+                    continue;
+                }else{
+                    break;
+                }
                 break;
             } else if (msg->frame_type == 2) {
 

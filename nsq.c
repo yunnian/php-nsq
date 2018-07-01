@@ -71,7 +71,7 @@ zend_class_entry *nsq_ce/*, *nsq_message_exception*/;
 
 PHP_METHOD(Nsq, __construct){
     zval *self;
-    zval *nsq_config  = (zval *)emalloc(sizeof(zval)); //use send IDENTIFY comand
+    zval *nsq_config  = (zval *)malloc(sizeof(zval)); //use send IDENTIFY comand
     bzero(nsq_config, sizeof(zval));
     ZVAL_NULL(nsq_config);
     self = getThis();
@@ -291,7 +291,7 @@ PHP_METHOD (Nsq, subscribe)
 
     } else {
 
-        auto_finish = emalloc(sizeof(auto_finish));
+        auto_finish = emalloc(sizeof(zval));
         ZVAL_TRUE(auto_finish);
     }
 
