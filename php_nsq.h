@@ -22,7 +22,7 @@
 extern zend_module_entry nsq_module_entry;
 #define phpext_nsq_ptr &nsq_module_entry
 
-#define PHP_NSQ_VERSION "3.0" /* Replace with version number for your extension */
+#define PHP_NSQ_VERSION "3.1.0" /* Replace with version number for your extension */
 
 #ifdef PHP_WIN32
 #	define PHP_NSQ_API __declspec(dllexport)

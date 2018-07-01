@@ -17,7 +17,7 @@
     </lead>
     <date>2018-06-21</date>
     <version>
-        <release>3.0</release>
+        <release>3.1.0</release>
         <api>2.0.0</api>
     </version>
     <stability>
@@ -26,8 +26,8 @@
     </stability>
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
-        *Fix libevent more than 4096 bytes are truncated
-        *add the identify command,can use be set or increase heartbeats time and msg-timeout
+        *Fix memory wrong
+        *Fix subscribe wrong
     </notes>
     <contents>
         <dir name="/">
