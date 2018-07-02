@@ -1,4 +1,3 @@
-dnl $Id$
 dnl config.m4 for extension nsq
 
 dnl Comments in this file start with the string 'dnl'.
