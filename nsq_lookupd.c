@@ -93,7 +93,7 @@ void ConnectionCloseCallback(struct evhttp_connection *connection, void *arg) {
 }
 
 char *lookup(char *host, char *topic) {
-    char *url = emalloc(sizeof(host) + sizeof(topic) + 30);
+    char *url = emalloc(sizeof(host) + sizeof(topic) + 128);
     if (strstr(url, "http://")) {
         sprintf(url, "%s%s%s", host, "/lookup?topic=", topic);
     } else {
