@@ -388,11 +388,6 @@ lookup:
     zval_dtor(&lookupd_re);
 }
 
-PHP_METHOD (Nsq, requeue) {
-    zend_throw_exception(NULL, "the message will be retry", 0);
-
-}
-
 
 static void _php_bufferevent_dtor(zend_resource *rsrc TSRMLS_DC) /* {{{ */ {
     struct bufferevent *bevent = (struct bufferevent *) rsrc;
