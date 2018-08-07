@@ -23,6 +23,7 @@
 #include "command.h"
 #include "common.h"
 #include "ext/standard/php_var.h"
+#include "zend_exceptions.h"
 
 extern zend_class_entry *nsq_message_ce;
 
@@ -234,7 +235,9 @@ void readcb(struct bufferevent *bev, void *arg) {
                     if (auto_finish) {
                         if (EG(exception)) {
                             nsq_requeue(bev, msg->message_id, msg->delay_time);
-                            EG(exception) = NULL;
+                            zend_exception_error(EG(exception), E_WARNING);
+                            zend_clear_exception();
+                            //EG(exception) = NULL;
                         }else{
                             nsq_finish(bev, msg->message_id);
                         }
