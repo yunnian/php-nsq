@@ -15,9 +15,9 @@
         <email>wuzhenyu7758@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2018-06-21</date>
+    <date>2018-08-07</date>
     <version>
-        <release>3.1.0</release>
+        <release>3.2.0</release>
         <api>2.0.0</api>
     </version>
     <stability>
@@ -26,8 +26,8 @@
     </stability>
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
-        *Fix memory wrong
-        *Fix subscribe wrong
+        *Fix The error message was not reported
+        *Fix pub error when ip or url too long
     </notes>
     <contents>
         <dir name="/">
