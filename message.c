@@ -35,6 +35,21 @@ PHP_METHOD(NsqMessage,touch)
     nsq_touch(bev, Z_STRVAL_P(message_id));
 }
 
+//undo: don't finish agin after requeue 
+PHP_METHOD(NsqMessage,requeue)
+{
+    zval *bev_zval;
+    zval *message_id;
+    zval *time_ms;
+	ZEND_PARSE_PARAMETERS_START(3,3)
+        Z_PARAM_RESOURCE(bev_zval)
+        Z_PARAM_ZVAL(message_id)
+        Z_PARAM_ZVAL(time_ms)
+	ZEND_PARSE_PARAMETERS_END();
+    struct bufferevent *bev = (struct bufferevent*)zend_fetch_resource(Z_RES_P(bev_zval), "buffer event", le_bufferevent);
+    nsq_requeue(bev, Z_STRVAL_P(message_id), Z_LVAL_P(time_ms));
+}
+
 
 
 PHP_METHOD(NsqMessage,finish)
@@ -49,6 +64,12 @@ PHP_METHOD(NsqMessage,finish)
     nsq_finish(bev, Z_STRVAL_P(message_id));
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_requeue, 0, 0, -1)
+    ZEND_ARG_INFO(0, bev_zval)
+    ZEND_ARG_INFO(0, message_id)
+    ZEND_ARG_INFO(0, time_ms)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_nsq_touch, 0, 0, -1)
     ZEND_ARG_INFO(0, bev_zval)
     ZEND_ARG_INFO(0, message_id)
@@ -61,6 +82,7 @@ ZEND_END_ARG_INFO()
 
 static const zend_function_entry nsq_message_functions[] = {
     PHP_ME(NsqMessage, touch, arginfo_nsq_touch, ZEND_ACC_PUBLIC)
+    PHP_ME(NsqMessage, requeue, arginfo_nsq_requeue, ZEND_ACC_PUBLIC)
     PHP_ME(NsqMessage, finish, arginfo_nsq_finish, ZEND_ACC_PUBLIC)
     PHP_FE_END	/* Must be the last line in nsq_functions[] */
 
