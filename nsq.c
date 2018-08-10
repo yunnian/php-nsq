@@ -459,7 +459,6 @@ const zend_function_entry nsq_functions[] = {
     PHP_ME(Nsq, publish, arginfo_nsq_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, deferredPublish, arginfo_nsq_d_publish, ZEND_ACC_PUBLIC)
     PHP_ME(Nsq, subscribe, arginfo_nsq_subscribe, ZEND_ACC_PUBLIC)
-    PHP_ME(Nsq, requeue, arginfo_nsq_requeue, ZEND_ACC_PUBLIC)
     PHP_FE_END    /* Must be the last line in nsq_functions[] */
 };
 /* }}} */
