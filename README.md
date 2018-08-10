@@ -129,17 +129,15 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev) use ($you_variable){
 <?php 
 
 $nsq->subscribe($nsq_lookupd, $config, function($msg){ 
-    try{
-        echo $msg->payload . " " . "attempts:".$msg->attempts."\n";
-        //do something
-    }catch(Exception $e){
+    echo $msg->payload . " " . "attempts:".$msg->attempts."\n";
+    //do something
 
+    if($yourCondition){
+        return;
+    }else{
         if($msg->attempts < 3){
             //the message will be retried after you configure retry_delay_time 
             throw new Exception(""); 
-        }else{
-            echo $e->getMessage();
-            return;
         }
     }
 
