@@ -173,8 +173,8 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 Changes
 -------
 * **3.2.0**
-  *Fix The error message was not reported
-  *Fix pub error when ip or url too long
+  * Fix The error message was not reported
+  * Fix pub error when ip or url too long
 * **3.1.0**
   * Fix memmory wrong
   * Fix subscribe  wrong 
