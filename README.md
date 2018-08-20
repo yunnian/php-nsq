@@ -20,6 +20,7 @@ NSQ  client for php7 .  QQ Group : 616063018<br/>
 ### Example for pub:
 
 ```php
+// Normal publish 
 $nsqdAddr = array(
     "127.0.0.1:4150",
     "127.0.0.1:4154"
