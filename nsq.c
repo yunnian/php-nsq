@@ -228,8 +228,13 @@ PHP_METHOD (Nsq, deferredPublish)
     val = zend_read_property(Z_OBJCE_P(getThis()), getThis(), "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1,
                              1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(val));
+    if(count == 0){
+        RETURN_FALSE;
+    }
     int r = rand() % count;
     sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
+
+    convert_to_string(msg);
     int re = deferredPublish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg), Z_LVAL_P(delay_time));
     if (re > 0) {
         RETURN_TRUE
