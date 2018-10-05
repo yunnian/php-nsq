@@ -28,12 +28,15 @@
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
 #include <event2/listener.h>
+#include <signal.h>
+#include<sys/wait.h>
 
 #include "ext/standard/php_string.h"
 #include "sub.h"
 #include "pub.h"
 #include "nsq_lookupd.h"
 #include "zend_exceptions.h"
+//#include <sys/prctl.h>
 
 #ifdef HAVE_SYS_WAIT_H
 #include "sys/wait.h"
@@ -245,6 +248,43 @@ PHP_METHOD (Nsq, deferredPublish)
 }
 
 
+HashTable *child_fd;
+
+static void signal_handle(int sig)
+{
+    int status;
+    pid_t pid;
+    zend_ulong index;
+    zval *val;
+    int s;
+    switch (sig)
+    {
+    case SIGTERM:
+        s = zend_array_count(child_fd);
+          // quit all child
+        ZEND_HASH_FOREACH_NUM_KEY_VAL(child_fd, index, val);
+            kill(Z_LVAL_P(val), SIGTERM);
+        ZEND_HASH_FOREACH_END();
+        exit(0);
+
+        break;
+        /**
+         * TODO reload all workers
+         */
+    case SIGUSR1:
+        break;
+    case SIGCHLD:
+      while((pid=waitpid(-1, &status, WNOHANG)) > 0){
+          printf("child %d terminated\n", pid);
+      };
+      break;
+    case SIGALRM:
+        break;
+    default:
+        break;
+    }
+}
+
 PHP_METHOD (Nsq, subscribe)
 {
     zend_fcall_info fci;
@@ -252,6 +292,7 @@ PHP_METHOD (Nsq, subscribe)
     zval *config;
     zval *class_lookupd;
     zval *lookupd_addr, rv3, lookupd_re;
+    zval zval_pid;
 
     ZEND_PARSE_PARAMETERS_START(3, 3)
         Z_PARAM_OBJECT(class_lookupd)
@@ -327,17 +368,22 @@ lookup:
         goto lookup;
     
     }
+
+    signal(SIGCHLD, signal_handle);
+    signal(SIGTERM, signal_handle);
+    ALLOC_HASHTABLE(child_fd);
+    zend_hash_init(child_fd, 0, NULL, ZVAL_PTR_DTOR, 1);
+
     // foreach producers  to get nsqd address
     zval *val;
     pid_t pid;
     int i;
 
-
     for (i = 0; i < Z_LVAL_P(connect_num); i++) {
 
         ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(producers), val) {
 
-            //signal(SIGCHLD,handler);
+            //signal(SIGCHLD, );
             pid = fork();
 
             if (pid == 0) {
@@ -378,18 +424,34 @@ lookup:
                 arg->fcc = &fcc;
                 arg->nsq_obj = getThis();
 
+                //child should quit when master quit
+                //prctl(PR_SET_PDEATHSIG,SIGHUP);
+
                 subscribe(arg);
                 free(msg);
                 free(arg);
             }
+            ZVAL_LONG(&zval_pid, pid);
+            zval *res = zend_hash_next_index_insert(child_fd, &zval_pid);
 
         }ZEND_HASH_FOREACH_END();
+
 
         zval_dtor(auto_finish);
         zval_dtor(connect_num);
         zval_dtor(config);
     }
-    wait(NULL);
+    int ret = 0;
+    while (1) {
+        ret = wait(NULL);
+        if (ret == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
+            break;
+        }
+    }
+
     zval_dtor(&lookupd_re);
 }
 
