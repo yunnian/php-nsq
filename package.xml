@@ -12,12 +12,12 @@
     <lead>
         <name>rick/ZhenYuwu</name>
         <user>rick</user>
-        <email>wuzhenyu7758@gmail.com</email>
+        <email>936321732@qq.com</email>
         <active>yes</active>
     </lead>
-    <date>2018-08-07</date>
+    <date>2018-10-21</date>
     <version>
-        <release>3.2.0</release>
+        <release>3.3.0</release>
         <api>2.0.0</api>
     </version>
     <stability>
@@ -26,8 +26,9 @@
     </stability>
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
-        *Fix The error message was not reported
-        *Fix pub error when ip or url too long
+        * add the process management
+        * When the child process exits abnormally, it will pull up a new child process
+        * When the master process exits, all child processes also exit
     </notes>
     <contents>
         <dir name="/">

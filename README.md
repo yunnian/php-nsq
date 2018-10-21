@@ -163,17 +163,15 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 4. `If your have strong consuming ability ,you can add you rdy num and connect num` <br/>
 
 
-5. `You can use supervisor to supervise process,The following configuration needs to be added to the supervisor configuration file: ` <br/>
-```
-    stopasgroup=true
-    killasgroup=true
-```
-
-6. `If your execution time is more than 1 minute, you should use 'touch()' function ` <br/>
+5. `If your execution time is more than 1 minute, you should use 'touch()' function ` <br/>
     
 
 Changes
 -------
+* **3.3.0**
+  * add the process management
+  * When the child process exits abnormally, it will pull up a new child process
+  * When the master process exits, all child processes also exit
 * **3.2.0**
   * Fix The error message was not reported
   * Fix pub error when ip or url too long
