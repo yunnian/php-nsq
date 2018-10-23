@@ -30,8 +30,11 @@
 #include "ext/standard/php_smart_string_public.h"
 #include "ext/json/php_json.h"
 #include "zend_smart_str.h"
+#include <signal.h>
 
 extern void error_handlings(char *message);
+//typedef void (*sighandler_t)(int);
+//void respond_hearbeat(int sock);
 
 int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int connect_num) {
     int *sock_arr = emalloc(connect_num * sizeof(int));
@@ -137,7 +140,12 @@ int publish(int sock, char *topic, char *msg) {
 
 again_size:
     size = read(sock, msg_size_char, 4);
-    if(size <= 0){
+    if( size ==  0 ){
+        php_printf("lost pub connection , read() return:%d\n",size);
+        free(msg_size_char);
+        return -1;
+    }
+    if(size == -1){
         goto again_size;
     }
     readI32((const unsigned char *) msg_size_char, &msg_size);
@@ -148,7 +156,7 @@ again_size:
     memset(message, 0x00, msg_size);
 again:
     l += read(sock, message +l , msg_size);
-    if( l < msg_size ){
+    if( l < msg_size && l>0){
         goto again;
     
     }
@@ -184,10 +192,20 @@ int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
     char *msg_size_char = malloc(4);
     memset(msg_size_char, 0x00, 4);
     int size;
+    /*
+    sighandler_t handler = respond_hearbeat ;
+    signal(SIGALRM, handler);
+    alarm(5);
+    */
 
 again_size:
-    size = read(sock, msg_size_char, 4);
-    if(size <= 0){
+    size = read(sock, msg_size_char , 4);
+    if( size ==  0 ){
+        php_printf("lost pub connection , read() return:%d\n",size);
+        free(msg_size_char);
+        return -1;
+    }
+    if(size == -1){
         goto again_size;
     }
     readI32((const unsigned char *) msg_size_char, &msg_size);
@@ -198,7 +216,7 @@ again_size:
     memset(message, 0x00, msg_size);
 again:
     l += read(sock, message +l , msg_size);
-    if( l < msg_size ){
+    if( l < msg_size && l>0){
         goto again;
     
     }
@@ -210,3 +228,11 @@ again:
         return -1;
     }
 }
+
+/*
+void respond_hearbeat(int sock){
+    //send(sock, "NOP",3 , 0);
+}
+*/
+
+
