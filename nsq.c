@@ -49,7 +49,6 @@ ZEND_DECLARE_MODULE_GLOBALS(nsq)
 /* True global resources - no need for thread safety here */
 static int le_nsq;
 int le_bufferevent;
-int le_arg;
 
 /* {{{ PHP_INI
  */
@@ -72,7 +71,6 @@ PHP_INI_END()
 zend_class_entry *nsq_ce/*, *nsq_message_exception*/;
 
 static void signal_handle(int sig);
-static void signal_handles(int sig);
 
 PHP_METHOD(Nsq, __construct){
     zval *self;
@@ -253,21 +251,21 @@ PHP_METHOD (Nsq, deferredPublish)
 
 
 HashTable *child_fd;
-HashTable *child_pid_arg;
 int is_init = 0;
-int master = 0;
+pid_t master = 0;
+ArgPidArr *arg_arr;
+int nsqd_num ;
 
-void start_worker_process(NSQArg *arg)
+void start_worker_process(NSQArg arg, int index)
 {
 
     zval zval_pid;
     zval zval_arg;
-    zend_resource *arg_resource;
     pid_t pid;
     pid = fork();
 
     if (pid == 0) {
-        subscribe(arg);
+        subscribe(&arg);
     }else if(pid > 0 ){
         if(!is_init) {
             master = getpid();
@@ -277,20 +275,15 @@ void start_worker_process(NSQArg *arg)
             // init hash table
             ALLOC_HASHTABLE(child_fd);
             zend_hash_init(child_fd, 0, NULL, ZVAL_PTR_DTOR, 1);
-
-            ALLOC_HASHTABLE(child_pid_arg);
-            zend_hash_init(child_pid_arg, 0, NULL, ZVAL_PTR_DTOR, 1);
             is_init = 1;
         
         }
 
+        arg_arr[index].pid = pid;
+        arg_arr[index].arg = arg;
+
         ZVAL_LONG(&zval_pid, pid);
         zval *fd_res = zend_hash_next_index_insert(child_fd, &zval_pid);
-
-        // value should build to zval 
-        arg_resource =  zend_register_resource(arg, le_arg);
-        ZVAL_RES(&zval_arg, arg_resource);
-        zval *arg_res = zend_hash_index_add(child_pid_arg, pid, &zval_arg);
     }
 }
 
@@ -324,10 +317,13 @@ static void signal_handle(int sig)
     case SIGCHLD:
         while((pid = waitpid(-1, &status, WNOHANG)) > 0){
             printf("child %d terminated, will reload \n", pid);
-            zval *zval_arg = zend_hash_index_find(child_pid_arg, pid);
-            struct NSQArg *arg = (struct NSQArg*)zend_fetch_resource(Z_RES_P(zval_arg), "sub nsqd arg", le_arg);
-            start_worker_process(arg);
-            zend_hash_index_del(child_pid_arg, (zend_ulong)pid);
+            int i;
+            for(i = 0; i < nsqd_num; i++){
+                if(arg_arr[i].pid == pid){
+                    struct NSQArg arg = arg_arr[i].arg;
+                    start_worker_process(arg, i);
+                }
+            }
       };
       break;
     case SIGALRM:
@@ -414,6 +410,8 @@ lookup:
     }
 
     producers_count = zend_array_count(Z_ARRVAL_P(producers));
+    nsqd_num = producers_count;
+
     if(producers_count < 1){
         php_printf("The topic '%s' has not produced on any nsqd in the cluster but are present in the lookup data. The program will be retried after 10 seconds \n",Z_STRVAL_P(topic));
         sleep(10);
@@ -421,12 +419,16 @@ lookup:
     
     }
 
+    arg_arr = (struct ArgPidArr*) malloc(sizeof(ArgPidArr) * producers_count);
+    memset(arg_arr, 0, producers_count * sizeof(ArgPidArr));
 
     // foreach producers  to get nsqd address
     zval *val;
     pid_t pid;
-    int i;
+    int i, j;
+    j = 0;
 
+    
     for (i = 0; i < Z_LVAL_P(connect_num); i++) {
 
         ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(producers), val) {
@@ -466,7 +468,9 @@ lookup:
             arg.fcc = &fcc;
             arg.nsq_obj = getThis();
 
-            start_worker_process(&arg);
+            start_worker_process(arg, j);
+
+            j++;
 
         }ZEND_HASH_FOREACH_END();
 
@@ -492,11 +496,6 @@ lookup:
 static void _php_bufferevent_dtor(zend_resource *rsrc TSRMLS_DC) /* {{{ */ {
     struct bufferevent *bevent = (struct bufferevent *) rsrc;
     efree(bevent);
-}
-
-static void _php_sub_arg_dtor(zend_resource *rsrc TSRMLS_DC) /* {{{ */ {
-    //struct NSQArg *arg = (NSQArg  *) rsrc;
-    //free(arg);
 }
 
 /* }}} */
@@ -579,7 +578,6 @@ PHP_MINIT_FUNCTION (nsq)
     zend_declare_property_null(nsq_ce,ZEND_STRL("nsqConfig"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_ce, ZEND_STRL("nsqd_connection_fds"), ZEND_ACC_PUBLIC TSRMLS_CC);
     le_bufferevent = zend_register_list_destructors_ex(_php_bufferevent_dtor, NULL, "buffer event", module_number);
-    le_arg = zend_register_list_destructors_ex(_php_sub_arg_dtor, NULL, "nsqdr arg", module_number);
 
     lookupd_init();
     message_init();

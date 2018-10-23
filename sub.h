@@ -41,6 +41,11 @@ typedef struct NSQArg {
     zval *nsq_obj;
 } NSQArg;
 
+typedef struct ArgPidArr {
+    pid_t pid;
+    NSQArg arg;
+} ArgPidArr;
+
 //param is the nsqlookeupd's ip and port ,return the socket fd
 int subscribe(NSQArg *nsq_arg);
 
