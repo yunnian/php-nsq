@@ -165,6 +165,8 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 5. `If your execution time is more than 1 minute, you should use 'touch()' function ` <br/>
     
+5. `Do not support calling publish or deferredPublish in subscribe function, please use nsqd's HTTP interface.` <br/>
+    
 
 Changes
 -------
