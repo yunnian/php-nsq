@@ -15,9 +15,9 @@
         <email>936321732@qq.com</email>
         <active>yes</active>
     </lead>
-    <date>2018-10-21</date>
+    <date>2018-10-23</date>
     <version>
-        <release>3.3.0</release>
+        <release>3.4.0</release>
         <api>2.0.0</api>
     </version>
     <stability>
@@ -26,9 +26,8 @@
     </stability>
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
-        * add the process management
-        * When the child process exits abnormally, it will pull up a new child process
-        * When the master process exits, all child processes also exit
+        * fix process management
+        * fix pub error
     </notes>
     <contents>
         <dir name="/">
