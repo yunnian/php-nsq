@@ -577,6 +577,7 @@ PHP_MINIT_FUNCTION (nsq)
     nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
     zend_declare_property_null(nsq_ce,ZEND_STRL("nsqConfig"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_ce, ZEND_STRL("nsqd_connection_fds"), ZEND_ACC_PUBLIC TSRMLS_CC);
+    zend_declare_property_null(nsq_ce, ZEND_STRL("conn_timeout"), ZEND_ACC_PUBLIC TSRMLS_CC);
     le_bufferevent = zend_register_list_destructors_ex(_php_bufferevent_dtor, NULL, "buffer event", module_number);
 
     lookupd_init();

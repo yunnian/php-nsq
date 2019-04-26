@@ -36,12 +36,30 @@ extern void error_handlings(char *message);
 //typedef void (*sighandler_t)(int);
 //void respond_hearbeat(int sock);
 
+void nsq_conf_timeout(zval *nsq_obj, struct timeval *timeout)
+{
+    zval *conn_timeout;
+    zval rv3;
+
+    if (!nsq_obj || !timeout)
+        return;
+
+    conn_timeout = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "conn_timeout", sizeof("conn_timeout") - 1, 1, &rv3);
+    if(Z_TYPE_P(conn_timeout) != IS_LONG || Z_LVAL_P(conn_timeout) < 0)
+        return;
+
+    timeout->tv_sec  = Z_LVAL_P(conn_timeout) / 1000;
+    timeout->tv_usec = (Z_LVAL_P(conn_timeout) % 1000) * 1000;
+}
+
 int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int connect_num) {
     int *sock_arr = emalloc(connect_num * sizeof(int));
     zval *fds;
     zval *val;
     zval rv3;
     struct hostent *he;
+    struct timeval timeout;
+
     fds = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1, 1,
                              &rv3);
 
@@ -53,6 +71,9 @@ int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int c
         }ZEND_HASH_FOREACH_END();
         return sock_arr;
     }
+
+    memset(&timeout, 0, sizeof(timeout));
+    nsq_conf_timeout(nsq_obj, &timeout);
 
     int i;
     for (i = 0; i < connect_num; i++) {
@@ -80,10 +101,22 @@ int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int c
             connect_config_arr--;
         }
 
+        if (timeout.tv_usec > 0 || timeout.tv_sec > 0)
+            setsockopt(sock_arr[i], SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+
         if (connect(sock_arr[i], (struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1) {
             error_handlings("connect() error");
             sock_arr[i] = 0;
+            continue;
         }
+
+        // reset timeout to default behaviour
+        if (timeout.tv_usec > 0 || timeout.tv_sec > 0) {
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 0;
+            setsockopt(sock_arr[i], SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+        }
+
         int flags = fcntl(sock_arr[i], F_GETFL, 0);
         fcntl(sock_arr[i], F_SETFL, flags | O_NONBLOCK);
         char *msgs = (char *) emalloc(4);
