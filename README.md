@@ -19,14 +19,16 @@ NSQ  client for php7 .  QQ Group : 616063018<br/>
     add in your php.ini:
 
     extension = nsq.so;
-    ------------
+
+
+    ----------------------------------------------------------------
+
+
     Tips: 
+
     if has the error "configure: error: Cannot find libevent headers" you should run :
 
-    ```
     ./configure --with-php-config=/usr/local/php-7.2.12/bin/php-config --with-libevent=/usr/local/libevent-2.1.8-stable/ 
-
-    ```
 
 
 ### Example for pub:
@@ -138,7 +140,7 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev) use ($you_variable){
 });
 ```
 
-2. `Requeue/Retry --  if you whant to retry your mesage when callback have something wrong, just throw any Exception , example:
+2. `Requeue/Retry --  if you whant to retry your message when callback have something wrong, just throw any Exception , example:
 ` <br/>
 
 ```
