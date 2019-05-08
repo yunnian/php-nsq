@@ -101,6 +101,9 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){
 
 * `subscribe($nsq_lookupd,$config,$callback)` <br/>
 
+* `conn_timeout = 100`<br />
+  connection timeout for `connectNsqd()` in milliseconds
+
 ### Message Object
 
 The following properties and methods are available on Message objects produced by a Reader
