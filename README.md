@@ -7,6 +7,10 @@ NSQ  client for php7 .  QQ Group : 616063018<br/>
 
     Dependencies: libevent  (apt-get install libevent-dev ,yum install libevent-devel)
 
+    pecl install nsq
+
+    or:
+
     1. sudo phpize
     2. ./configure 
     3. make  
@@ -15,6 +19,14 @@ NSQ  client for php7 .  QQ Group : 616063018<br/>
     add in your php.ini:
 
     extension = nsq.so;
+    ------------
+    Tips: 
+    if has the error "configure: error: Cannot find libevent headers" you should run :
+
+    ```
+    ./configure --with-php-config=/usr/local/php-7.2.12/bin/php-config --with-libevent=/usr/local/libevent-2.1.8-stable/ 
+
+    ```
 
 
 ### Example for pub:
