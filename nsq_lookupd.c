@@ -99,7 +99,6 @@ char *lookup(char *host, char *topic) {
     } else {
         sprintf(url, "%s%s%s%s", "http://", host, "/lookup?topic=", topic);
     }
-    php_printf("url:%s",url);
     char *data = request(url);
     efree(url);
     return data;
