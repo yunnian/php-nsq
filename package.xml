@@ -15,9 +15,9 @@
         <email>936321732@qq.com</email>
         <active>yes</active>
     </lead>
-    <date>2018-10-23</date>
+    <date>2019-06-11</date>
     <version>
-        <release>3.4.0</release>
+        <release>3.4.1</release>
         <api>2.0.0</api>
     </version>
     <stability>
@@ -26,8 +26,8 @@
     </stability>
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
-        * fix process management
-        * fix pub error
+        * fix url 
+        * add connect time out
     </notes>
     <contents>
         <dir name="/">
