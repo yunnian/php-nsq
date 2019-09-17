@@ -27,6 +27,7 @@
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
         * Fix the problem of sub-processes not restarting automatically in CentOS environment
+        * this version is Stable
     </notes>
     <contents>
         <dir name="/">
