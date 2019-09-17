@@ -25,7 +25,7 @@ NSQ  client for php7 .  QQ Group : 616063018<br/>
 
     if has the error "configure: error: Cannot find libevent headers" you should run :
 
-    ./configure --with-php-config=/usr/local/php-7.2.12/bin/php-config --with-libevent=/usr/local/libevent-2.1.8-stable/ 
+    ./configure --with-php-config=/usr/local/php-7.2.12/bin/php-config --with-libevent-path=/usr/local/libevent-2.1.8-stable/ 
 
 
 ### Example for pub:
