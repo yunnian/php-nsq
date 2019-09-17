@@ -421,7 +421,7 @@ lookup:
     
     }
 
-    arg_arr = (struct ArgPidArr*) malloc(sizeof(ArgPidArr) * producers_count);
+    arg_arr = (struct ArgPidArr*) emalloc(sizeof(ArgPidArr) * producers_count);
     memset(arg_arr, 0, producers_count * sizeof(ArgPidArr));
 
     // foreach producers  to get nsqd address
@@ -481,13 +481,18 @@ lookup:
     while (1) {
         ret_pid = wait(NULL);
         printf("child process pid %d be terminated, trying reload \n", ret_pid);
-        int i;
-        for(i = 0; i < nsqd_num; i++){
-            if(arg_arr[i].pid == ret_pid){
-                struct NSQArg arg = arg_arr[i].arg;
-                start_worker_process(arg, i);
-            }
-        }
+        int i ,j ; 
+	int k = 0;
+
+        for(i = 0; i < Z_LVAL_P(connect_num); i++){
+	    for(j = 0; j < nsqd_num; j++){
+	        if(arg_arr[k].pid == ret_pid){
+		    struct NSQArg arg = arg_arr[k].arg;
+		    start_worker_process(arg, k);
+		 }
+		k++;
+	    }
+       }
         if (ret_pid == -1) {
             if (errno == EINTR) {
                 continue;

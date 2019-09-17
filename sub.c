@@ -105,11 +105,11 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data) {
     } else if (events & BEV_EVENT_CONNECTED) {
         printf("Connect succeed\n");
         struct NSQMsg *msg = ((struct NSQArg *) user_data)->msg;
-        char *v = (char *) malloc(4);
+        char *v = (char *) emalloc(4);
         memcpy(v, "  V2", 4);
         evutil_socket_t fd = bufferevent_getfd(bev);
         int res = write(fd, v, 4);
-        free(v);
+        efree(v);
         send_identify(((struct NSQArg *) user_data)->nsq_obj, fd);
 
         nsq_subscribe(bev, msg->topic, msg->channel);
