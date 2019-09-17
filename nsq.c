@@ -491,10 +491,8 @@ lookup:
         printf("child process pids %d be terminated, trying reload \n", ret_pid);
         int i ,j ;
         int k = 0;
-        printf("last all pid : \n");
         for(i = 0; i < Z_LVAL_P(connect_num); i++){
             for(j = 0; j < nsqd_num; j++){
-                printf("%d\n", arg_arr[k].pid);
                 if(arg_arr[k].pid == ret_pid){
                     struct NSQArg arg = arg_arr[k].arg;
                     start_worker_process(arg, k);
