@@ -438,32 +438,35 @@ lookup:
             zval *nsqd_host = zend_hash_str_find(Z_ARRVAL_P(val), "broadcast_address",
                     sizeof("broadcast_address") - 1);
             zval *nsqd_port = zend_hash_str_find(Z_ARRVAL_P(val), "tcp_port", sizeof("tcp_port") - 1);
-            struct NSQMsg msg;
-            msg.topic = Z_STRVAL_P(topic);
-            msg.channel = Z_STRVAL_P(channel);
+            struct NSQMsg *msg;
+            msg = (struct  NSQMsg*) emalloc(sizeof(NSQMsg) );
+	    memset(msg, 0,  sizeof(NSQMsg));
+            msg->topic = Z_STRVAL_P(topic);
+            msg->channel = Z_STRVAL_P(channel);
 
             if (rdy) {
-                msg.rdy = Z_LVAL_P(rdy);
+                msg->rdy = Z_LVAL_P(rdy);
             } else {
-                msg.rdy = 1;
+                msg->rdy = 1;
             }
 
             if (delay_time) {
-                msg.delay_time = Z_LVAL_P(delay_time);
+                msg->delay_time = Z_LVAL_P(delay_time);
             } else {
-                msg.delay_time = 0;
+                msg->delay_time = 0;
             }
 
             if (auto_finish && Z_TYPE_P(auto_finish) == IS_TRUE) {
-                msg.auto_finish = 1;
+                msg->auto_finish = 1;
             } else {
-                msg.auto_finish = 0;
+                msg->auto_finish = 0;
             }
 
             convert_to_string(nsqd_port);
 
             NSQArg arg;
-            arg.msg = &msg;
+            arg.msg = msg;
+            
             arg.host = Z_STRVAL_P(nsqd_host);
             arg.port = Z_STRVAL_P(nsqd_port);
             arg.fci = &fci;
@@ -480,12 +483,19 @@ lookup:
     int ret_pid = 0;
     while (1) {
         ret_pid = wait(NULL);
-        printf("child process pid %d be terminated, trying reload \n", ret_pid);
+        if (ret_pid == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
+            break;
+        }
+        printf("child process pids %d be terminated, trying reload \n", ret_pid);
         int i ,j ; 
 	int k = 0;
 
         for(i = 0; i < Z_LVAL_P(connect_num); i++){
 	    for(j = 0; j < nsqd_num; j++){
+        	printf("arr pid %d \n", arg_arr[k].pid);
 	        if(arg_arr[k].pid == ret_pid){
 		    struct NSQArg arg = arg_arr[k].arg;
 		    start_worker_process(arg, k);
@@ -493,12 +503,6 @@ lookup:
 		k++;
 	    }
        }
-        if (ret_pid == -1) {
-            if (errno == EINTR) {
-                continue;
-            }
-            break;
-        }
 
 
     }
