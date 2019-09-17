@@ -315,6 +315,7 @@ static void signal_handle(int sig)
     case SIGUSR1:
         break;
     case SIGCHLD:
+        /*
         while((pid = waitpid(-1, &status, WNOHANG)) > 0){
             printf("child %d terminated, will reload \n", pid);
             int i;
@@ -325,6 +326,7 @@ static void signal_handle(int sig)
                 }
             }
       };
+         */
       break;
     case SIGALRM:
         break;
@@ -478,12 +480,22 @@ lookup:
     int ret_pid = 0;
     while (1) {
         ret_pid = wait(NULL);
+        printf("child %d terminated, trying reload \n", pid);
+        int i;
+        for(i = 0; i < nsqd_num; i++){
+            if(arg_arr[i].pid == ret_pid){
+                struct NSQArg arg = arg_arr[i].arg;
+                start_worker_process(arg, i);
+            }
+        }
         if (ret_pid == -1) {
             if (errno == EINTR) {
                 continue;
             }
             break;
         }
+
+
     }
 
     zval_dtor(auto_finish);
