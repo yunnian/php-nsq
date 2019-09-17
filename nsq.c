@@ -480,7 +480,7 @@ lookup:
     int ret_pid = 0;
     while (1) {
         ret_pid = wait(NULL);
-        printf("child %d terminated, trying reload \n", pid);
+        printf("child process pid %d be terminated, trying reload \n", ret_pid);
         int i;
         for(i = 0; i < nsqd_num; i++){
             if(arg_arr[i].pid == ret_pid){
