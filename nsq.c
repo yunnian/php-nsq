@@ -29,11 +29,12 @@
 #include <event2/buffer.h>
 #include <event2/listener.h>
 #include <signal.h>
-#include<sys/wait.h>
+#include <sys/wait.h>
 
 #include "ext/standard/php_string.h"
 #include "sub.h"
 #include "pub.h"
+#include "message.h"
 #include "nsq_lookupd.h"
 #include "zend_exceptions.h"
 //#include <sys/prctl.h>
@@ -599,9 +600,8 @@ PHP_MINIT_FUNCTION (nsq)
     zend_declare_property_null(nsq_ce, ZEND_STRL("nsqd_connection_fds"), ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_ce, ZEND_STRL("conn_timeout"), ZEND_ACC_PUBLIC TSRMLS_CC);
     le_bufferevent = zend_register_list_destructors_ex(_php_bufferevent_dtor, NULL, "buffer event", module_number);
-
     lookupd_init();
-    message_init();
+    nsq_message_init();
 
     return SUCCESS;
 }

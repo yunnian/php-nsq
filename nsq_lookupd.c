@@ -15,7 +15,6 @@
 */
 
 #include <php.h>
-#include "nsq_lookupd.h"
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -45,7 +44,7 @@ ZEND_END_ARG_INFO()
 
 static PHP_METHOD(NsqLookupd, __construct);
 
-static zend_class_entry *nsq_lookupd_ce;
+zend_class_entry *nsq_lookupd_ce;
 
 static const zend_function_entry nsq_lookupd_functions[] = {
     PHP_ME(NsqLookupd, __construct, ctor, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)

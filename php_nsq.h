@@ -20,7 +20,7 @@
 extern zend_module_entry nsq_module_entry;
 #define phpext_nsq_ptr &nsq_module_entry
 
-#define PHP_NSQ_VERSION "3.4.3" /* Replace with version number for your extension */
+#define PHP_NSQ_VERSION "3.5.0" /* Replace with version number for your extension */
 
 #ifdef PHP_WIN32
 #	define PHP_NSQ_API __declspec(dllexport)
@@ -37,7 +37,6 @@ extern zend_module_entry nsq_module_entry;
 #define get_object_handle(object)        Z_OBJ_HANDLE_P(object)
 
 
-void message_init();
 
 void error_handlings(char *message);
 

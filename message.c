@@ -15,8 +15,9 @@
 */
 
 #include <php.h>
-#include <event2/bufferevent.h>
 #include "ext/standard/php_var.h"
+#include <message.h>
+#include <event2/bufferevent.h>
 #include "command.h"
 
 zend_class_entry *nsq_message_ce;
@@ -88,7 +89,7 @@ static const zend_function_entry nsq_message_functions[] = {
 
 };
 
-void message_init(){
+void nsq_message_init() {
     zend_class_entry nsq_message;
     INIT_CLASS_ENTRY(nsq_message,"NsqMessage",nsq_message_functions);
     nsq_message_ce = zend_register_internal_class(&nsq_message TSRMLS_CC);

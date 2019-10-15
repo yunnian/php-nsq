@@ -13,6 +13,7 @@ $config = array(
     "retry_delay_time" => 5000,  // after 5000 msec, message will be retried
     "auto_finish" => true,
 );
+//new NsqMessage();
 
 $nsq->subscribe($nsq_lookupd, $config, function($msg,$bev){
 

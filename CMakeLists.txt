@@ -14,6 +14,8 @@ set(SOURCE_FILES
         sub.h
         pub.c
         pub.h
+        message.h
+        message.c
 
         )
 

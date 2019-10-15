@@ -15,9 +15,9 @@
         <email>936321732@qq.com</email>
         <active>yes</active>
     </lead>
-    <date>2019-09-17</date>
+    <date>2019-10-15</date>
     <version>
-        <release>3.4.3</release>
+        <release>3.5.0</release>
         <api>2.0.0</api>
     </version>
     <stability>
@@ -26,8 +26,7 @@
     </stability>
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
-        * Fix the problem of sub-processes not restarting automatically in CentOS environment
-        * this version is Stable
+        * Fix the bug in MacOs
     </notes>
     <contents>
         <dir name="/">
@@ -48,6 +47,7 @@
             <file role='src' name='common.c'/>
             <file role='src' name='command.c'/>
             <file role='src' name='command.h'/>
+            <file role='src' name='message.h'/>
             <file role='src' name='message.c'/>
             <dir name="examples">
                 <file role='doc' name='identify_pub.php'/>
