@@ -128,7 +128,7 @@ char *request(char *url) {
     }
     assert(dnsbase);
 
-    result * re  = (result * ) malloc ( sizeof(result) );
+    result * re  = (result * ) emalloc ( sizeof(result) );
     re->base = base;
 
     struct evhttp_request *request = evhttp_request_new(FinshCallback, re);
