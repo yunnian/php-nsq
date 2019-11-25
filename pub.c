@@ -253,9 +253,9 @@ again:
         goto again;
     
     }
-    efree(message);
 
     if (strcmp(message + 4, "OK") == 0) {
+        efree(message);
         return sock;
     } else {
         return -1;
