@@ -593,15 +593,12 @@ const zend_function_entry nsq_functions[] = {
  */
 PHP_MINIT_FUNCTION (nsq)
 {
-
-    zend_class_entry ce;
     zend_class_entry nsq;
-
     INIT_CLASS_ENTRY(nsq, "Nsq", nsq_functions);
 
-    INIT_CLASS_ENTRY(ce, "NsqException", NULL);
-
-    php_nsq_exception_ce = zend_register_internal_class_ex(&ce, zend_ce_exception);
+    zend_class_entry ne;
+    INIT_CLASS_ENTRY(ne, "NsqException", NULL);
+    php_nsq_exception_ce = zend_register_internal_class_ex(&ne, zend_ce_exception);
 
     nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
     zend_declare_property_null(nsq_ce,ZEND_STRL("nsqConfig"),ZEND_ACC_PUBLIC TSRMLS_CC);
