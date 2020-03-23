@@ -23,6 +23,7 @@
 #include "command.h"
 #include "common.h"
 #include "ext/standard/php_var.h"
+#include "nsq_exception.h"
 #include "zend_exceptions.h"
 
 extern zend_class_entry *nsq_message_ce;
@@ -57,7 +58,7 @@ int subscribe(NSQArg *arg) {
     srv.sin_port = htons(atoi(arg->port));
     struct event_base *base = event_base_new();
     if (!base) {
-        printf("Could not initialize libevent\n");
+        throw_exception(PHP_NSQ_ERROR_LIBEVENT_COULD_NOT_BE_INITIALIZED);
         return 1;
     }
 
@@ -71,14 +72,13 @@ int subscribe(NSQArg *arg) {
     int flag = bufferevent_socket_connect(bev, (struct sockaddr *) &srv, sizeof(srv));
     bufferevent_enable(bev, EV_READ | EV_WRITE);
     if (-1 == flag) {
-
-        //printf("Connect failed retry:%d\n",retry_num );  
-        printf("Connect failed retry");
+        throw_exception(PHP_NSQ_ERROR_CONNECTION_FAILED);
+        //printf("Connect failed retry:%d\n",retry_num );
         /*
         if(retry_num <= 10000){
             retry_num ++;
-            bufferevent_free(bev);  
-            event_base_free(base);  
+            bufferevent_free(bev);
+            event_base_free(base);
             subscribe(address, port, msg, callback);
         }
         */
@@ -103,7 +103,6 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data) {
         bufferevent_free(bev);
         subscribe((NSQArg *) user_data);
     } else if (events & BEV_EVENT_CONNECTED) {
-        printf("Connect succeed\n");
         struct NSQMsg *msg = ((struct NSQArg *) user_data)->msg;
         char *v = (char *) emalloc(4);
         memcpy(v, "  V2", 4);
@@ -151,11 +150,11 @@ void readcb(struct bufferevent *bev, void *arg) {
         l += bufferevent_read(bev, message + l, msg->size - l );
 
         if(l < msg->size){
-            
+
             is_first = 0;
             break;
         }
-        
+
         if (errno) {
             //printf("errno = %d\n", errno); // errno = 33
             //printf("error: %s\n", strerror(errno));
@@ -167,7 +166,7 @@ void readcb(struct bufferevent *bev, void *arg) {
                 // this is heartbeat
                 if (msg->size == 15) {
                     bufferevent_write(bev, "NOP\n", strlen("NOP\n"));
-                // this is response  OK
+                    // this is response  OK
                 }else if (msg->size == 6){
                     //nothing
                 }
@@ -230,7 +229,8 @@ void readcb(struct bufferevent *bev, void *arg) {
                 fci->param_count = 2;
                 fci->retval = &retval;
                 if (zend_call_function(fci, fcc TSRMLS_CC) != SUCCESS) {
-                    php_printf("callback function call failed \n");
+                    throw_exception(PHP_NSQ_ERROR_CALLBACK_FUNCTION_IS_NOT_CALLABLE);
+//                    php_printf("callback function call failed \n");
                 } else {
                     if (auto_finish) {
                         if (EG(exception)) {

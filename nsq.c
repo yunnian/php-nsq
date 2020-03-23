@@ -36,45 +36,12 @@
 #include "pub.h"
 #include "message.h"
 #include "nsq_lookupd.h"
-#include "zend_exceptions.h"
+#include "nsq_exception.h"
 //#include <sys/prctl.h>
 
 #ifdef HAVE_SYS_WAIT_H
 #include "sys/wait.h"
 #endif
-
-#define PHP_NSQ_REGISTER_CONSTANT(_name, _value) \
-	REGISTER_LONG_CONSTANT(_name,  _value, CONST_CS | CONST_PERSISTENT);
-
-typedef enum {
-    PHP_NSQ_ERROR_NONE = 0,
-    PHP_NSQ_ERROR_NO_CONNECTION,
-    PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE,
-    PHP_NSQ_ERROR_TOPIC_KEY_REQUIRED,
-    PHP_NSQ_ERROR_CHANNEL_KEY_REQUIRED,
-    PHP_NSQ_ERROR_LOOKUPD_SERVER_NOT_AVAILABLE,
-} php_nsq_error_code;
-
-static const char *php_nsq_get_error_msg(php_nsq_error_code error_code) /* {{{ */
-{
-    switch(error_code) {
-        case PHP_NSQ_ERROR_NONE:
-            return "No error";
-        case PHP_NSQ_ERROR_NO_CONNECTION:
-            return "No connection to close";
-        case PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE:
-            return "Unable to publish message";
-        case PHP_NSQ_ERROR_TOPIC_KEY_REQUIRED:
-            return "Topic key is required";
-        case PHP_NSQ_ERROR_CHANNEL_KEY_REQUIRED:
-            return "Channel key is required";
-        case PHP_NSQ_ERROR_LOOKUPD_SERVER_NOT_AVAILABLE:
-            return "Lookupd server not available";
-        default:
-            return "Unknown error";
-    }
-}
-/* }}} */
 
 /* If you declare any globals in php_nsq.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(nsq)
@@ -103,7 +70,6 @@ PHP_INI_END()
    Return a string to confirm that the module is compiled in */
 
 zend_class_entry *nsq_ce/*, *nsq_message_exception*/;
-PHPAPI zend_class_entry *php_nsq_exception_ce;
 
 static void signal_handle(int sig);
 
@@ -196,7 +162,7 @@ PHP_METHOD (Nsq, closeNsqdConnection)
                             1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(connection_fds));
     if(count == 0){
-        zend_throw_exception(php_nsq_exception_ce, php_nsq_get_error_msg(PHP_NSQ_ERROR_NO_CONNECTION), PHP_NSQ_ERROR_NO_CONNECTION);
+        throw_exception(PHP_NSQ_ERROR_NO_CONNECTION);
     }
     int close_success = 1;
     ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(connection_fds), val) {
@@ -232,7 +198,7 @@ PHP_METHOD (Nsq, publish)
                              1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(val));
     if(count == 0){
-        zend_throw_exception(php_nsq_exception_ce, php_nsq_get_error_msg(PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE), PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE);
+        throw_exception(PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE);
     }
     int r = rand() % count;
     sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
@@ -268,7 +234,7 @@ PHP_METHOD (Nsq, deferredPublish)
                              1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(val));
     if(count == 0){
-        zend_throw_exception(php_nsq_exception_ce, php_nsq_get_error_msg(PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE), PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE);
+        throw_exception(PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE);
     }
     int r = rand() % count;
     sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
@@ -390,13 +356,13 @@ PHP_METHOD (Nsq, subscribe)
 
     zval *topic = zend_hash_str_find(Z_ARRVAL_P(config), "topic", sizeof("topic") - 1);
     if (!topic) {
-        zend_throw_exception(php_nsq_exception_ce, php_nsq_get_error_msg(PHP_NSQ_ERROR_TOPIC_KEY_REQUIRED), PHP_NSQ_ERROR_TOPIC_KEY_REQUIRED);
+        throw_exception(PHP_NSQ_ERROR_TOPIC_KEY_REQUIRED);
         return;
     }
 
     zval *channel = zend_hash_str_find(Z_ARRVAL_P(config), "channel", sizeof("channel") - 1);
     if (!channel) {
-        zend_throw_exception(php_nsq_exception_ce, php_nsq_get_error_msg(PHP_NSQ_ERROR_CHANNEL_KEY_REQUIRED), PHP_NSQ_ERROR_CHANNEL_KEY_REQUIRED);
+        throw_exception(PHP_NSQ_ERROR_CHANNEL_KEY_REQUIRED);
     }
 
     zval *rdy = zend_hash_str_find(Z_ARRVAL_P(config), "rdy", sizeof("rdy") - 1);
@@ -431,7 +397,7 @@ lookup:
     lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
 
     if (*lookupd_re_str == '\0') {
-        zend_throw_exception(php_nsq_exception_ce, php_nsq_get_error_msg(PHP_NSQ_ERROR_LOOKUPD_SERVER_NOT_AVAILABLE), PHP_NSQ_ERROR_LOOKUPD_SERVER_NOT_AVAILABLE);
+        throw_exception(PHP_NSQ_ERROR_LOOKUPD_SERVER_NOT_AVAILABLE);
         return;
     };
 
@@ -439,7 +405,8 @@ lookup:
     producers = zend_hash_str_find(Z_ARRVAL(lookupd_re), "producers", sizeof("producers") - 1);
     if (!producers) {
         message = zend_hash_str_find(Z_ARRVAL(lookupd_re), "message", sizeof("message") - 1);
-        php_printf("%s\n", Z_STRVAL_P(message));
+        throw_exception(PHP_NSQ_ERROR_TOPIC_NOT_EXISTS);
+//        php_printf("%s\n", Z_STRVAL_P(message));
         return;
 
     }
@@ -628,17 +595,6 @@ PHP_MINIT_FUNCTION (nsq)
     zend_class_entry nsq;
     INIT_CLASS_ENTRY(nsq, "Nsq", nsq_functions);
 
-    zend_class_entry ne;
-    INIT_CLASS_ENTRY(ne, "NsqException", NULL);
-    php_nsq_exception_ce = zend_register_internal_class_ex(&ne, zend_ce_exception);
-
-    PHP_NSQ_REGISTER_CONSTANT("NSQ_ERROR_NONE", PHP_NSQ_ERROR_NONE);
-    PHP_NSQ_REGISTER_CONSTANT("NSQ_ERROR_NO_CONNECTION", PHP_NSQ_ERROR_NO_CONNECTION);
-    PHP_NSQ_REGISTER_CONSTANT("NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE", PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE);
-    PHP_NSQ_REGISTER_CONSTANT("NSQ_ERROR_TOPIC_KEY_REQUIRED", PHP_NSQ_ERROR_TOPIC_KEY_REQUIRED);
-    PHP_NSQ_REGISTER_CONSTANT("NSQ_ERROR_CHANNEL_KEY_REQUIRED", PHP_NSQ_ERROR_CHANNEL_KEY_REQUIRED);
-    PHP_NSQ_REGISTER_CONSTANT("NSQ_ERROR_LOOKUPD_SERVER_NOT_AVAILABLE", PHP_NSQ_ERROR_LOOKUPD_SERVER_NOT_AVAILABLE);
-
     nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
     zend_declare_property_null(nsq_ce,ZEND_STRL("nsqConfig"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_ce, ZEND_STRL("nsqd_connection_fds"), ZEND_ACC_PUBLIC TSRMLS_CC);
@@ -646,6 +602,7 @@ PHP_MINIT_FUNCTION (nsq)
     le_bufferevent = zend_register_list_destructors_ex(_php_bufferevent_dtor, NULL, "buffer event", module_number);
     lookupd_init();
     nsq_message_init();
+    nsq_exception_init();
 
     return SUCCESS;
 }

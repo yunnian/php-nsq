@@ -41,6 +41,8 @@
             <file role='src' name='pub.h'/>
             <file role='src' name='sub.c'/>
             <file role='src' name='sub.h'/>
+            <file role='src' name='nsq_exception.c'/>
+            <file role='src' name='nsq_exception.h'/>
             <file role='src' name='nsq_lookupd.c'/>
             <file role='src' name='nsq_lookupd.h'/>
             <file role='src' name='common.h'/>

@@ -4,6 +4,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(SOURCE_FILES
         php_nsq.h
         nsq.c
+        nsq_exception.h
+        nsq_exception.c
         nsq_lookupd.c
         nsq_lookupd.h
         command.c
