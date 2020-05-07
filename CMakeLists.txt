@@ -21,9 +21,15 @@ set(SOURCE_FILES
 
 add_executable(php-nsq ${SOURCE_FILES})
 
-#定义php源码路径，这里根据自己的真实路径来更改
-set(PHP_SOURCE /data/php-src)
-#引入php需要的扩展源码，这里也是根据自己需要的来更改
+execute_process (
+        COMMAND php-config --include-dir
+        OUTPUT_VARIABLE PHP_SOURCE
+)
+
+string(REGEX REPLACE "\n$" "" PHP_SOURCE "${PHP_SOURCE}")
+
+message("Using source directory: ${PHP_SOURCE}")
+
 include_directories(${PHP_SOURCE}/main)
 include_directories(${PHP_SOURCE}/Zend)
 include_directories(${PHP_SOURCE}/sapi)

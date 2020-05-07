@@ -24,8 +24,8 @@ typedef struct nsqd_connect_config {
 
 int * connect_nsqd(zval *ce, nsqd_connect_config *connect_config_arr, int connect_num);
 
-int publish(int sock, char *topic, char *msg);
+int publish(int sock, char *topic, char *msg, size_t msg_len);
 
-int deferredPublish(int sock, char *topic, char *msg, int delay_time);
+int deferredPublish(int sock, char *topic, char *msg, size_t msg_len, int delay_time);
 
 #endif //STRUGGLE_NSQ_PUB_CLIENT_C_H
