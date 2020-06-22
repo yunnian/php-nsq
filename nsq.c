@@ -36,7 +36,7 @@
 #include "pub.h"
 #include "message.h"
 #include "nsq_lookupd.h"
-#include "zend_exceptions.h"
+#include "nsq_exception.h"
 //#include <sys/prctl.h>
 
 #ifdef HAVE_SYS_WAIT_H
@@ -162,8 +162,7 @@ PHP_METHOD (Nsq, closeNsqdConnection)
                             1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(connection_fds));
     if(count == 0){
-        php_printf("no connection need to close");
-        RETURN_FALSE;
+        throw_exception(PHP_NSQ_ERROR_NO_CONNECTION);
     }
     int close_success = 1;
     ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(connection_fds), val) {
@@ -199,7 +198,7 @@ PHP_METHOD (Nsq, publish)
                              1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(val));
     if(count == 0){
-        RETURN_FALSE;
+        throw_exception(PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE);
     }
     int r = rand() % count;
     sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
@@ -235,7 +234,7 @@ PHP_METHOD (Nsq, deferredPublish)
                              1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(val));
     if(count == 0){
-        RETURN_FALSE;
+        throw_exception(PHP_NSQ_ERROR_UNABLE_TO_PUBLISH_MESSAGE);
     }
     int r = rand() % count;
     sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
@@ -357,14 +356,13 @@ PHP_METHOD (Nsq, subscribe)
 
     zval *topic = zend_hash_str_find(Z_ARRVAL_P(config), "topic", sizeof("topic") - 1);
     if (!topic) {
-        php_error_docref(NULL, E_WARNING, "not find topic key");
+        throw_exception(PHP_NSQ_ERROR_TOPIC_KEY_REQUIRED);
         return;
     }
 
     zval *channel = zend_hash_str_find(Z_ARRVAL_P(config), "channel", sizeof("channel") - 1);
     if (!channel) {
-        php_error_docref(NULL, E_WARNING, "not find channel key");
-        return;
+        throw_exception(PHP_NSQ_ERROR_CHANNEL_KEY_REQUIRED);
     }
 
     zval *rdy = zend_hash_str_find(Z_ARRVAL_P(config), "rdy", sizeof("rdy") - 1);
@@ -399,7 +397,7 @@ lookup:
     lookupd_re_str = lookup(Z_STRVAL_P(lookupd_addr), Z_STRVAL_P(topic));
 
     if (*lookupd_re_str == '\0') {
-        php_printf("request lookupd_addr error ,check your lookupd server\n");
+        throw_exception(PHP_NSQ_ERROR_LOOKUPD_SERVER_NOT_AVAILABLE);
         return;
     };
 
@@ -407,7 +405,8 @@ lookup:
     producers = zend_hash_str_find(Z_ARRVAL(lookupd_re), "producers", sizeof("producers") - 1);
     if (!producers) {
         message = zend_hash_str_find(Z_ARRVAL(lookupd_re), "message", sizeof("message") - 1);
-        php_printf("%s\n", Z_STRVAL_P(message));
+        throw_exception(PHP_NSQ_ERROR_TOPIC_NOT_EXISTS);
+//        php_printf("%s\n", Z_STRVAL_P(message));
         return;
 
     }
@@ -416,6 +415,7 @@ lookup:
     nsqd_num = producers_count;
 
     if(producers_count < 1){
+        //TODO: this maybe exception?
         php_printf("The topic '%s' has not produced on any nsqd in the cluster but are present in the lookup data. The program will be retried after 10 seconds \n",Z_STRVAL_P(topic));
         sleep(10);
         goto lookup;
@@ -592,9 +592,9 @@ const zend_function_entry nsq_functions[] = {
  */
 PHP_MINIT_FUNCTION (nsq)
 {
-
     zend_class_entry nsq;
     INIT_CLASS_ENTRY(nsq, "Nsq", nsq_functions);
+
     nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
     zend_declare_property_null(nsq_ce,ZEND_STRL("nsqConfig"),ZEND_ACC_PUBLIC TSRMLS_CC);
     zend_declare_property_null(nsq_ce, ZEND_STRL("nsqd_connection_fds"), ZEND_ACC_PUBLIC TSRMLS_CC);
@@ -602,6 +602,7 @@ PHP_MINIT_FUNCTION (nsq)
     le_bufferevent = zend_register_list_destructors_ex(_php_bufferevent_dtor, NULL, "buffer event", module_number);
     lookupd_init();
     nsq_message_init();
+    nsq_exception_init();
 
     return SUCCESS;
 }

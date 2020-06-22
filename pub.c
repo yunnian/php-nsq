@@ -31,6 +31,8 @@
 #include "ext/json/php_json.h"
 #include "zend_smart_str.h"
 #include <signal.h>
+#include "nsq_exception.h"
+#include "zend_exceptions.h"
 
 extern void error_handlings(char *message);
 //typedef void (*sighandler_t)(int);
@@ -122,7 +124,7 @@ int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int c
         char *msgs = (char *) emalloc(4);
         memcpy(msgs, "  V2", 4);
         int r = send((sock_arr[i]), msgs, 4, MSG_DONTWAIT);
-		send_identify(nsq_obj, sock_arr[i]);
+        send_identify(nsq_obj, sock_arr[i]);
         efree(msgs);
     }
 
@@ -185,7 +187,7 @@ int publish(int sock, char *topic, char *msg, size_t msg_len) {
 again_size:
     size = read(sock, msg_size_char, 4);
     if( size ==  0 ){
-        php_printf("lost pub connection , read() return:%d\n",size);
+        throw_exception(PHP_NSQ_ERROR_PUB_LOST_CONNECTION);
         free(msg_size_char);
         return -1;
     }
@@ -202,7 +204,7 @@ again:
     l += read(sock, message +l , msg_size);
     if( l < msg_size && l>0){
         goto again;
-    
+
     }
     if (strcmp(message + 4, "OK") == 0) {
         efree(message);
@@ -261,7 +263,7 @@ int deferredPublish(int sock, char *topic, char *msg, size_t msg_len, int defer_
 again_size:
     size = read(sock, msg_size_char , 4);
     if( size ==  0 ){
-        php_printf("lost pub connection , read() return:%d\n",size);
+        throw_exception(PHP_NSQ_ERROR_PUB_LOST_CONNECTION);
         free(msg_size_char);
         return -1;
     }
@@ -278,7 +280,7 @@ again:
     l += read(sock, message +l , msg_size);
     if( l < msg_size && l>0){
         goto again;
-    
+
     }
 
     if (strcmp(message + 4, "OK") == 0) {
