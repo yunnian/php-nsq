@@ -149,22 +149,33 @@ int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int c
 
 extern int errno;
 
-int publish(int sock, char *topic, char *msg) {
+int publish(int sock, char *topic, char *msg, size_t msg_len) {
     char buf[1024 * 1024];
-    size_t n;
-    char *pub_command = emalloc(strlen(topic) + strlen("PUB \n") + 1);
-    memset(pub_command, 0x00, strlen(topic) + strlen("PUB \n"));
 
-    sprintf(pub_command, "%s%s%s", "PUB ", topic, "\n");
-    int len = htonl(strlen(msg));
-    n = sprintf(buf, "%s", pub_command);
-    memcpy(&buf[strlen(pub_command)], &len, 4);
-    n = sprintf(&buf[strlen(pub_command) + 4], "%s", msg);
-    int sendLen = strlen(pub_command) + strlen(msg) + 4;
-    send(sock, buf, sendLen, 0);
-    efree(pub_command);
+    size_t ofs  = 0;
+    // write command
+    // PUB <topic>/n
+    // write command
+    strncpy(&buf[ofs], "PUB ", 4);
+    ofs+=4;
+    // write topic
+    strcpy(&buf[ofs], topic);
+    ofs+=strlen(topic);
+    // write command delimiter
+    buf[ofs] = '\n';
+    ofs+=1;
+
+    // write msg len
+    int len = htonl(msg_len);
+    memcpy(&buf[ofs], &len, 4);
+    ofs+=4;
+    // write msg
+    memcpy(&buf[ofs], msg, msg_len);
+    ofs+=msg_len;
+
+    send(sock, buf, ofs, 0);
+
     int l = 0;
-    int current_l = 0;
     int msg_size;
     char *message;
     char *msg_size_char = malloc(4);
@@ -203,20 +214,36 @@ again:
 
 }
 
-int deferredPublish(int sock, char *topic, char *msg, int defer_time) {
+int deferredPublish(int sock, char *topic, char *msg, size_t msg_len, int defer_time) {
     char buf[1024 * 1024];
-    size_t n;
-    char *pub_command = emalloc(128);
-    int command_len = sprintf(pub_command, "%s%s%s%lld%s", "DPUB ", topic, " ", defer_time, "\n");
-    int len = htonl(strlen(msg));
-    //int  len = strlen(msg);
-    n = sprintf(buf, "%s", pub_command);
-    memcpy(&buf[command_len], &len, 4);
-    n = sprintf(&buf[command_len + 4], "%s", msg);
-    int sendLen = command_len + strlen(msg) + 4;
 
-    send(sock, buf, sendLen, 0);
-    efree(pub_command);
+    size_t ofs  = 0;
+    // write command
+    // DPUB <topic> <defer_time>/n
+    // write command
+    strncpy(&buf[ofs], "DPUB ", 5);
+    ofs+=5;
+    // write topic
+    strcpy(&buf[ofs], topic);
+    ofs+=strlen(topic);
+    buf[ofs] = ' ';
+    ofs+=1;
+    // write defer_time
+    int defer_len = sprintf(&buf[ofs], "%lld", defer_time);
+    ofs+=defer_len;
+    // write command delimiter
+    buf[ofs] = '\n';
+    ofs+=1;
+
+    // write msg len
+    int len = htonl(msg_len);
+    memcpy(&buf[ofs], &len, 4);
+    ofs+=4;
+    // write msg
+    memcpy(&buf[ofs], msg, msg_len);
+    ofs+=msg_len;
+
+    send(sock, buf, ofs, 0);
 
     int l = 0;
     int current_l = 0;

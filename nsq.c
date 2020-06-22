@@ -205,7 +205,7 @@ PHP_METHOD (Nsq, publish)
     sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
 
     convert_to_string(msg);
-    int re = publish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg));
+    int re = publish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg), Z_STRLEN_P(msg));
     //zval_dtor(&rv3);
     //zval_ptr_dtor(msg);
     //zval_dtor(sock);
@@ -241,7 +241,7 @@ PHP_METHOD (Nsq, deferredPublish)
     sock = zend_hash_index_find(Z_ARRVAL_P(val), r);
 
     convert_to_string(msg);
-    int re = deferredPublish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg), Z_LVAL_P(delay_time));
+    int re = deferredPublish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg), Z_STRLEN_P(msg), Z_LVAL_P(delay_time));
     if (re > 0) {
         RETURN_TRUE
     } else {

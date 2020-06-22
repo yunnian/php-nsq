@@ -2,6 +2,11 @@
 
 NSQ  client for php7 .  QQ Group : 616063018<br/>
 
+### Changes
+
+**2020-05-07**
+- fixed https://github.com/yunnian/php-nsq/issues/39
+message are binary-safe now
 
 ### intall :
 
