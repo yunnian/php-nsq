@@ -20,6 +20,7 @@
 #include <assert.h>
 #include "ext/standard/php_var.h"
 #include "nsq_lookupd.h"
+#include "common.h"
 
 #include "event2/http.h"
 #include "event2/http_struct.h"
@@ -55,8 +56,8 @@ static const zend_function_entry nsq_lookupd_functions[] = {
 void lookupd_init() {
     zend_class_entry nsq_lookupd;
     INIT_CLASS_ENTRY(nsq_lookupd, "NsqLookupd", nsq_lookupd_functions);
-    nsq_lookupd_ce = zend_register_internal_class(&nsq_lookupd TSRMLS_CC);
-    zend_declare_property_null(nsq_lookupd_ce, ZEND_STRL("address"), ZEND_ACC_PUBLIC TSRMLS_CC);
+    nsq_lookupd_ce = zend_register_internal_class(&nsq_lookupd);
+    zend_declare_property_null(nsq_lookupd_ce, ZEND_STRL("address"), ZEND_ACC_PUBLIC);
 }
 
 PHP_METHOD (NsqLookupd, __construct) {
@@ -66,7 +67,7 @@ PHP_METHOD (NsqLookupd, __construct) {
     ZEND_PARSE_PARAMETERS_START(1, 1)
             Z_PARAM_ZVAL(address)
     ZEND_PARSE_PARAMETERS_END();
-    zend_update_property(Z_OBJCE_P(self), self, ZEND_STRL("address"), address TSRMLS_CC);
+    zend_update_property(Z_OBJCE_P(self),  NSQ_COMPAT_OBJ_P(self), ZEND_STRL("address"), address);
 }
 
 void FinshCallback(struct evhttp_request *remote_rsp, void *arg) {
