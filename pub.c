@@ -46,7 +46,7 @@ void nsq_conf_timeout(zval *nsq_obj, struct timeval *timeout)
     if (!nsq_obj || !timeout)
         return;
 
-    conn_timeout = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "conn_timeout", sizeof("conn_timeout") - 1, 1, &rv3);
+    conn_timeout = zend_read_property(Z_OBJCE_P(nsq_obj), NSQ_COMPAT_OBJ_P(nsq_obj), "conn_timeout", sizeof("conn_timeout") - 1, 1, &rv3);
     if(Z_TYPE_P(conn_timeout) != IS_LONG || Z_LVAL_P(conn_timeout) < 0)
         return;
 
@@ -62,7 +62,7 @@ int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int c
     struct hostent *he;
     struct timeval timeout;
 
-    fds = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1, 1,
+    fds = zend_read_property(Z_OBJCE_P(nsq_obj), NSQ_COMPAT_OBJ_P(nsq_obj), "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1, 1,
                              &rv3);
 
     if (Z_TYPE_P(fds) != IS_NULL) {
@@ -142,7 +142,7 @@ int * connect_nsqd(zval *nsq_obj, nsqd_connect_config *connect_config_arr, int c
     }
 
 
-    zend_update_property(Z_OBJCE_P(nsq_obj), nsq_obj, ZEND_STRL("nsqd_connection_fds"), &fd_arr TSRMLS_CC);
+    zend_update_property(Z_OBJCE_P(nsq_obj),  NSQ_COMPAT_OBJ_P(nsq_obj), ZEND_STRL("nsqd_connection_fds"), &fd_arr);
     zval_dtor(&fd_arr);
     //zval_dtor(&rv3);
     return  sock_arr;

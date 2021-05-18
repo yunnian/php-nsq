@@ -207,20 +207,20 @@ void readcb(struct bufferevent *bev, void *arg) {
                 //message_id
                 zend_string *message_id_str = zend_string_init(msg->message_id, 16, 0);
                 ZVAL_STR_COPY(&message_id, message_id_str);
-                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("message_id"), &message_id TSRMLS_CC);
-                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("messageId"), &message_id TSRMLS_CC);
+                zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("message_id"), &message_id);
+                zend_update_property(nsq_message_ce,  NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("messageId"), &message_id);
 
                 //attempts
                 ZVAL_LONG(&attempts, msg->attempts);
-                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("attempts"), &attempts TSRMLS_CC);
+                zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("attempts"), &attempts);
                 //timestamp
                 ZVAL_LONG(&timestamp, msg->timestamp);
-                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("timestamp"), &timestamp TSRMLS_CC);
+                zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("timestamp"), &timestamp);
 
                 //payload
                 zend_string *payload_str = zend_string_init(msg->body, msg->size - 30, 0);
                 ZVAL_STR_COPY(&payload, payload_str);
-                zend_update_property(nsq_message_ce, &msg_object, ZEND_STRL("payload"), &payload TSRMLS_CC);
+                zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("payload"), &payload);
 
                 //call function
                 ZVAL_OBJ(&params[0], Z_OBJ(msg_object));
@@ -228,7 +228,7 @@ void readcb(struct bufferevent *bev, void *arg) {
                 fci->params = params;
                 fci->param_count = 2;
                 fci->retval = &retval;
-                if (zend_call_function(fci, fcc TSRMLS_CC) != SUCCESS) {
+                if (zend_call_function(fci, fcc) != SUCCESS) {
                     throw_exception(PHP_NSQ_ERROR_CALLBACK_FUNCTION_IS_NOT_CALLABLE);
 //                    php_printf("callback function call failed \n");
                 } else {

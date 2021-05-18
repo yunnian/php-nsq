@@ -29,7 +29,7 @@ int send_identify(zval *nsq_obj, int sock)
     zval * nsq_config;
     zval rv3;
     zval json;
-    nsq_config = zend_read_property(Z_OBJCE_P(nsq_obj), nsq_obj, "nsqConfig", sizeof("nsqConfig")-1, 1, &rv3);
+    nsq_config = zend_read_property(Z_OBJCE_P(nsq_obj), NSQ_COMPAT_OBJ_P(nsq_obj), "nsqConfig", sizeof("nsqConfig")-1, 1, &rv3);
 
     smart_str json_buf = {0};
     if(Z_TYPE_P(nsq_config) != IS_NULL){

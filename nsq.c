@@ -25,6 +25,7 @@
 #include "ext/standard/info.h"
 #include "ext/json/php_json.h"
 #include "php_nsq.h"
+#include "common.h"
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
 #include <event2/listener.h>
@@ -85,7 +86,7 @@ PHP_METHOD(Nsq, __construct){
     ZEND_PARSE_PARAMETERS_END();
 
     if(Z_TYPE_P(nsq_config) != IS_NULL){
-        zend_update_property(Z_OBJCE_P(self),self,ZEND_STRL("nsqConfig"), nsq_config TSRMLS_CC);
+        zend_update_property(Z_OBJCE_P(self),NSQ_COMPAT_OBJ_P(self),ZEND_STRL("nsqConfig"), nsq_config);
     }
 }
 
@@ -158,7 +159,7 @@ PHP_METHOD (Nsq, closeNsqdConnection)
     zval *connection_fds;
     zval rv3;
     zval *val;
-    connection_fds = zend_read_property(Z_OBJCE_P(getThis()), getThis(), "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1,
+    connection_fds = zend_read_property(Z_OBJCE_P(getThis()), NSQ_COMPAT_OBJ_P(getThis()), "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1,
                             1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(connection_fds));
     if(count == 0){
@@ -194,7 +195,7 @@ PHP_METHOD (Nsq, publish)
         Z_PARAM_ZVAL(topic)
         Z_PARAM_ZVAL(msg)
     ZEND_PARSE_PARAMETERS_END();
-    val = zend_read_property(Z_OBJCE_P(getThis()), getThis(), "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1,
+    val = zend_read_property(Z_OBJCE_P(getThis()), NSQ_COMPAT_OBJ_P(getThis()), "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1,
                              1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(val));
     if(count == 0){
@@ -209,10 +210,9 @@ PHP_METHOD (Nsq, publish)
     //zval_ptr_dtor(msg);
     //zval_dtor(sock);
     if (re > 0) {
-        RETURN_TRUE
+        RETURN_TRUE;
     } else {
-        RETURN_FALSE
-
+        RETURN_FALSE;
     }
 }
 
@@ -230,7 +230,7 @@ PHP_METHOD (Nsq, deferredPublish)
         Z_PARAM_ZVAL(msg)
         Z_PARAM_ZVAL(delay_time)
     ZEND_PARSE_PARAMETERS_END();
-    val = zend_read_property(Z_OBJCE_P(getThis()), getThis(), "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1,
+    val = zend_read_property(Z_OBJCE_P(getThis()), NSQ_COMPAT_OBJ_P(getThis()), "nsqd_connection_fds", sizeof("nsqd_connection_fds") - 1,
                              1, &rv3);
     int count = zend_array_count(Z_ARRVAL_P(val));
     if(count == 0){
@@ -242,10 +242,9 @@ PHP_METHOD (Nsq, deferredPublish)
     convert_to_string(msg);
     int re = deferredPublish(Z_LVAL_P(sock), Z_STRVAL_P(topic), Z_STRVAL_P(msg), Z_STRLEN_P(msg), Z_LVAL_P(delay_time));
     if (re > 0) {
-        RETURN_TRUE
+        RETURN_TRUE;
     } else {
-        RETURN_FALSE
-
+        RETURN_FALSE;
     }
 }
 
@@ -351,7 +350,7 @@ PHP_METHOD (Nsq, subscribe)
     ZEND_PARSE_PARAMETERS_END();
 
 
-    lookupd_addr = zend_read_property(Z_OBJCE_P(class_lookupd), class_lookupd, "address", sizeof("address") - 1, 1,
+    lookupd_addr = zend_read_property(Z_OBJCE_P(class_lookupd), NSQ_COMPAT_OBJ_P(class_lookupd), "address", sizeof("address") - 1, 1,
                                       &rv3);
 
     zval *topic = zend_hash_str_find(Z_ARRVAL_P(config), "topic", sizeof("topic") - 1);
@@ -514,7 +513,7 @@ lookup:
 }
 
 
-static void _php_bufferevent_dtor(zend_resource *rsrc TSRMLS_DC) /* {{{ */ {
+static void _php_bufferevent_dtor(zend_resource *rsrc) /* {{{ */ {
     struct bufferevent *bevent = (struct bufferevent *) rsrc;
     efree(bevent);
 }
@@ -595,10 +594,10 @@ PHP_MINIT_FUNCTION (nsq)
     zend_class_entry nsq;
     INIT_CLASS_ENTRY(nsq, "Nsq", nsq_functions);
 
-    nsq_ce = zend_register_internal_class(&nsq TSRMLS_CC);
-    zend_declare_property_null(nsq_ce,ZEND_STRL("nsqConfig"),ZEND_ACC_PUBLIC TSRMLS_CC);
-    zend_declare_property_null(nsq_ce, ZEND_STRL("nsqd_connection_fds"), ZEND_ACC_PUBLIC TSRMLS_CC);
-    zend_declare_property_null(nsq_ce, ZEND_STRL("conn_timeout"), ZEND_ACC_PUBLIC TSRMLS_CC);
+    nsq_ce = zend_register_internal_class(&nsq);
+    zend_declare_property_null(nsq_ce,ZEND_STRL("nsqConfig"),ZEND_ACC_PUBLIC);
+    zend_declare_property_null(nsq_ce, ZEND_STRL("nsqd_connection_fds"), ZEND_ACC_PUBLIC);
+    zend_declare_property_null(nsq_ce, ZEND_STRL("conn_timeout"), ZEND_ACC_PUBLIC);
     le_bufferevent = zend_register_list_destructors_ex(_php_bufferevent_dtor, NULL, "buffer event", module_number);
     lookupd_init();
     nsq_message_init();
