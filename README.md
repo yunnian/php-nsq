@@ -8,7 +8,7 @@ NSQ  client for php7 .  QQ Group : 616063018<br/>
 - fixed https://github.com/yunnian/php-nsq/issues/39
 message are binary-safe now
 
-### intall :
+### install :
 
     Dependencies: libevent  (apt-get install libevent-dev ,yum install libevent-devel)
 
