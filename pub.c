@@ -175,9 +175,7 @@ int publish(int sock, char *topic, char *msg, size_t msg_len) {
     memcpy(&buf[ofs], msg, msg_len);
     ofs+=msg_len;
 
-    //printf("start_send:%s","ss");
     int send_len = send(sock, buf, ofs, 0);
-    //printf("send_len: %d\n", send_len);
     if ( -1 == send_len) {
         printf("%d, send error :%s\n",__LINE__,strerror(errno));
     }
@@ -202,14 +200,10 @@ again_read:
         return -1;
     }
     if(size == -1){
-        //printf("%d, read error :%s\n",__LINE__,strerror(errno));
         goto again_read;
     }
 
     readI32((const unsigned char *) msg_size_char, &msg_size);
-    //printf("msg_size: %d\n", msg_size);
-
-
     message = emalloc(msg_size + 1);
     memset(message, 0x00, msg_size);
 again:
@@ -279,14 +273,10 @@ int deferredPublish(int sock, char *topic, char *msg, size_t msg_len, int defer_
         return -1;
     }
     if(size == -1){
-        //printf("%d, read error :%s\n",__LINE__,strerror(errno));
         goto again_read;
     }
 
     readI32((const unsigned char *) msg_size_char, &msg_size);
-    //printf("msg_size: %d\n", msg_size);
-
-
     message = emalloc(msg_size + 1);
     memset(message, 0x00, msg_size);
     again:
@@ -307,7 +297,8 @@ int deferredPublish(int sock, char *topic, char *msg, size_t msg_len, int defer_
         return -1;
     }
 }
-
+//TODO: WHEN  code execute long time after publish ，over 60s , No response heartbeat , will exit
+// so should open a separate process to listen thegit heartbeat
 /*
 void respond_hearbeat(int sock){
     //send(sock, "NOP",3 , 0);
