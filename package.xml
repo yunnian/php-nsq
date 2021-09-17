@@ -26,7 +26,10 @@
     </stability>
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
-        * Fix the bug in MacOs
+        * For PHP8
+        * add publish connection timeout
+        * fix pub bug retrun false when revice heartbeat
+
     </notes>
     <contents>
         <dir name="/">
