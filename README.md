@@ -1,6 +1,6 @@
 # php-nsq
 
-NSQ  client for php7&php8<br/>
+NSQ  client for php7&php8  <br/>
 
 ### install :
 
@@ -179,7 +179,14 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 5. `If your execution time is more than 1 minute, you should use 'touch()' function ` <br/>
     
 5. `Do not support calling publish or deferredPublish in subscribe function, please use nsqd's HTTP interface.` <br/>
+
+## Contributors <a href="https://github.com/yunnian/php-nsq/graphs/contributors"> <img src="https://contrib.rocks/image?repo=yunnian/php-nsq" /> </a>
     
+Any form of contribution is welcome. 
+
+
+### Connection 
+Wechat: yunnian_wechat
 
 Changes
 -------
