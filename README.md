@@ -1,12 +1,6 @@
 # php-nsq
 
-NSQ  client for php7 .  QQ Group : 616063018<br/>
-
-### Changes
-
-**2020-05-07**
-- fixed https://github.com/yunnian/php-nsq/issues/39
-message are binary-safe now
+NSQ  client for php7&php8<br/>
 
 ### install :
 
@@ -189,6 +183,11 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 Changes
 -------
+* **3.5.1**
+  * fix publish return error when get the heartbeat
+  * add exception
+  * for PHP8.0
+  * fix https://github.com/yunnian/php-nsq/issues/39 message are binary-safe now
 * **3.3.0**
   * add the process management
   * When the child process exits abnormally, it will pull up a new child process
@@ -202,28 +201,3 @@ Changes
 * **3.0**
   * Fix libevent more than 4096 bytes are truncated
   * add the identify command,can use be set or increase heartbeats time and msg-timeout
-* **2.4.0**
-  * Fix pub bug
-  * Fix sub coredump 
-  * Fix touch bug
-  * Add the waite,  when topic has no message
-* **2.3.1**
-  * Support the domain host of pub
-  * Fix pub coredump 
-* **2.3.0**
-  * Optimized memory usage,  Guarantee stability of resident memory 
-* **2.2.0**
-  * Fix pub bug zend_mm_heap corrupted 
-  * Fix pub block bug  when received the 'heartbeats' 
-  * Add the bufferevent resource
-  * Add the deferred publish
-  * Add the touch function
-  * Add the finish function
-* **2.1.1**
-  * Fix core dump
-* **2.0**
-  * retry
-  * message object
-  * fix c99 install error
-  * license
-

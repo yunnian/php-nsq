@@ -15,9 +15,9 @@
         <email>936321732@qq.com</email>
         <active>yes</active>
     </lead>
-    <date>2019-10-15</date>
+    <date>2021-09-17</date>
     <version>
-        <release>3.5.0</release>
+        <release>3.5.1</release>
         <api>2.0.0</api>
     </version>
     <stability>
@@ -26,7 +26,10 @@
     </stability>
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
-        * Fix the bug in MacOs
+        * for PHP8
+        * add pub connection timeout
+        * fix pub bug retrun false when revice heartbeat
+
     </notes>
     <contents>
         <dir name="/">
