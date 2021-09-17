@@ -26,8 +26,8 @@
     </stability>
     <license uri="http://www.php.net/license">PHP</license>
     <notes>
-        * For PHP8
-        * add publish connection timeout
+        * for PHP8
+        * add pub connection timeout
         * fix pub bug retrun false when revice heartbeat
 
     </notes>
