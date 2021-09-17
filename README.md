@@ -2,12 +2,6 @@
 
 NSQ  client for php7 .  QQ Group : 616063018<br/>
 
-### Changes
-
-**2020-05-07**
-- fixed https://github.com/yunnian/php-nsq/issues/39
-message are binary-safe now
-
 ### install :
 
     Dependencies: libevent  (apt-get install libevent-dev ,yum install libevent-devel)
@@ -189,6 +183,11 @@ $nsq->subscribe($nsq_lookupd, $config, function($msg){
 
 Changes
 -------
+* **3.5.1**
+  * fix publish return error when get the heartbeat
+  * add exception
+  * for PHP8.0
+  * fix https://github.com/yunnian/php-nsq/issues/39 message are binary-safe now
 * **3.3.0**
   * add the process management
   * When the child process exits abnormally, it will pull up a new child process

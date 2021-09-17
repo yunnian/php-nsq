@@ -175,16 +175,26 @@ int publish(int sock, char *topic, char *msg, size_t msg_len) {
     memcpy(&buf[ofs], msg, msg_len);
     ofs+=msg_len;
 
-    send(sock, buf, ofs, 0);
+    //printf("start_send:%s","ss");
+    int send_len = send(sock, buf, ofs, 0);
+    //printf("send_len: %d\n", send_len);
+    if ( -1 == send_len) {
+        printf("%d, send error :%s\n",__LINE__,strerror(errno));
+    }
+    if( send_len ==  0 ){
+        throw_exception(PHP_NSQ_ERROR_PUB_LOST_CONNECTION);
+        return -1;
+    }
 
-    int l = 0;
+    int l ;
     int msg_size;
     char *message;
     char *msg_size_char = malloc(4);
-    memset(msg_size_char, 0x00, 4);
     int size;
 
-again_size:
+again_read:
+    l = 0;
+    memset(msg_size_char, 0x00, 4);
     size = read(sock, msg_size_char, 4);
     if( size ==  0 ){
         throw_exception(PHP_NSQ_ERROR_PUB_LOST_CONNECTION);
@@ -192,11 +202,13 @@ again_size:
         return -1;
     }
     if(size == -1){
-        goto again_size;
+        //printf("%d, read error :%s\n",__LINE__,strerror(errno));
+        goto again_read;
     }
-    readI32((const unsigned char *) msg_size_char, &msg_size);
 
-    free(msg_size_char);
+    readI32((const unsigned char *) msg_size_char, &msg_size);
+    //printf("msg_size: %d\n", msg_size);
+
 
     message = emalloc(msg_size + 1);
     memset(message, 0x00, msg_size);
@@ -208,9 +220,13 @@ again:
     }
     if (strcmp(message + 4, "OK") == 0) {
         efree(message);
+        free(msg_size_char);
         return sock;
-    } else {
+    } else if ( strcmp(message + 4, "_heartbeat_") == 0 ) {
+        goto again_read;
+    }else{
         efree(message);
+        free(msg_size_char);
         return -1;
     }
 
@@ -247,46 +263,47 @@ int deferredPublish(int sock, char *topic, char *msg, size_t msg_len, int defer_
 
     send(sock, buf, ofs, 0);
 
-    int l = 0;
-    int current_l = 0;
+    int l ;
     int msg_size;
     char *message;
     char *msg_size_char = malloc(4);
-    memset(msg_size_char, 0x00, 4);
     int size;
-    /*
-    sighandler_t handler = respond_hearbeat ;
-    signal(SIGALRM, handler);
-    alarm(5);
-    */
 
-again_size:
-    size = read(sock, msg_size_char , 4);
+    again_read:
+    l = 0;
+    memset(msg_size_char, 0x00, 4);
+    size = read(sock, msg_size_char, 4);
     if( size ==  0 ){
         throw_exception(PHP_NSQ_ERROR_PUB_LOST_CONNECTION);
         free(msg_size_char);
         return -1;
     }
     if(size == -1){
-        goto again_size;
+        //printf("%d, read error :%s\n",__LINE__,strerror(errno));
+        goto again_read;
     }
-    readI32((const unsigned char *) msg_size_char, &msg_size);
 
-    free(msg_size_char);
+    readI32((const unsigned char *) msg_size_char, &msg_size);
+    //printf("msg_size: %d\n", msg_size);
+
 
     message = emalloc(msg_size + 1);
     memset(message, 0x00, msg_size);
-again:
+    again:
     l += read(sock, message +l , msg_size);
     if( l < msg_size && l>0){
         goto again;
 
     }
-
     if (strcmp(message + 4, "OK") == 0) {
         efree(message);
+        free(msg_size_char);
         return sock;
-    } else {
+    } else if ( strcmp(message + 4, "_heartbeat_") == 0 ) {
+        goto again_read;
+    }else{
+        efree(message);
+        free(msg_size_char);
         return -1;
     }
 }
