@@ -1,6 +1,6 @@
 # php-nsq
 
-NSQ  client for php7 .  QQ Group : 616063018<br/>
+NSQ  client for php7&php8<br/>
 
 ### install :
 
@@ -201,28 +201,3 @@ Changes
 * **3.0**
   * Fix libevent more than 4096 bytes are truncated
   * add the identify command,can use be set or increase heartbeats time and msg-timeout
-* **2.4.0**
-  * Fix pub bug
-  * Fix sub coredump 
-  * Fix touch bug
-  * Add the waite,  when topic has no message
-* **2.3.1**
-  * Support the domain host of pub
-  * Fix pub coredump 
-* **2.3.0**
-  * Optimized memory usage,  Guarantee stability of resident memory 
-* **2.2.0**
-  * Fix pub bug zend_mm_heap corrupted 
-  * Fix pub block bug  when received the 'heartbeats' 
-  * Add the bufferevent resource
-  * Add the deferred publish
-  * Add the touch function
-  * Add the finish function
-* **2.1.1**
-  * Fix core dump
-* **2.0**
-  * retry
-  * message object
-  * fix c99 install error
-  * license
-
