@@ -21,7 +21,7 @@ char * request(char * url);
 
 void lookupd_init();
 
-char *lookup();
+char *lookup(char *host, char *topic);
 
 char *request(char *url);
 
