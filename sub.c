@@ -103,10 +103,10 @@ void worker_process_main(zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_
             if (n == 0) {
                 break; // pipe closed, exiting
             }
-            continue; // 读取失败，继续等待
+            continue; // read failed, continue waiting
         }
         
-        // 读取消息体
+        // Read message body
         char *msg_body = malloc(work_msg.body_len + 1);
         n = read(msg_pipe[0], msg_body, work_msg.body_len);
         if (n != work_msg.body_len) {
@@ -115,7 +115,7 @@ void worker_process_main(zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_
         }
         msg_body[work_msg.body_len] = '\0';
         
-        // 创建PHP对象并调用用户函数
+        // Create PHP object and call user function
         zval retval;
         zval params[2];
         zval msg_object;
@@ -160,7 +160,7 @@ void worker_process_main(zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_
             }
         }
 
-        // 发送结果回主进程
+        // Send result back to main process
         worker_result_t result;
         memcpy(result.message_id, work_msg.message_id, 16);
         result.message_id[16] = '\0';
@@ -233,7 +233,7 @@ int subscribe(NSQArg *arg) {
     int flag = bufferevent_socket_connect(bev, (struct sockaddr *) &srv, sizeof(srv));
     bufferevent_enable(bev, EV_READ | EV_WRITE);
     
-    // 添加result_pipe的事件监听
+    // Add event listener for result_pipe
     struct event *result_event = event_new(base, result_pipe[0], EV_READ | EV_PERSIST, result_pipe_cb, (void *)arg);
     event_add(result_event, NULL);
     
@@ -252,7 +252,7 @@ int subscribe(NSQArg *arg) {
 
     event_base_dispatch(base);
     
-    // 清理worker进程
+    // Clean up worker process
     if (worker_pid > 0) {
         kill(worker_pid, SIGTERM);
         waitpid(worker_pid, NULL, 0);
@@ -334,7 +334,7 @@ void readcb(struct bufferevent *bev, void *arg) {
             readI32((const unsigned char *) message, &msg->frame_type);
 
             if (msg->frame_type == 0) {
-                // this is heartbeat - 立即响应，绝对优先
+                // this is heartbeat - respond immediately, absolute priority
                 if (msg->size == 15) {
                     bufferevent_write(bev, "NOP\n", strlen("NOP\n"));
                     // this is response  OK
@@ -352,7 +352,7 @@ void readcb(struct bufferevent *bev, void *arg) {
                 }
                 break;
             } else if (msg->frame_type == 2) {
-                // 业务消息 - 发送给worker进程处理
+                // Business message - send to worker process for handling
                 
                 msg->message_id = (char *) emalloc(17);
                 memset(msg->message_id, '\0', 17);
@@ -366,7 +366,7 @@ void readcb(struct bufferevent *bev, void *arg) {
                 memset(msg->body, '\0', msg->size - 30 + 1);
                 memcpy(msg->body, message + 30, msg->size - 30);
 
-                // 发送消息给worker进程处理
+                // Send message to worker process for handling
                 worker_message_t work_msg;
                 memcpy(work_msg.message_id, msg->message_id, 16);
                 work_msg.message_id[16] = '\0';
@@ -376,14 +376,14 @@ void readcb(struct bufferevent *bev, void *arg) {
                 work_msg.delay_time = msg->delay_time;
                 work_msg.auto_finish = auto_finish;
 
-                // 发送消息头
+                // Send message header
                 ssize_t n = write(msg_pipe[1], &work_msg, sizeof(worker_message_t));
                 if (n == sizeof(worker_message_t)) {
-                    // 发送消息体
+                    // Send message body
                     write(msg_pipe[1], msg->body, work_msg.body_len);
                 }
 
-                // 清理主进程的内存
+                // Clean up main process memory
                 efree(msg->body);
                 efree(msg->message_id);
 
