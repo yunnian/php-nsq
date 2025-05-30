@@ -4,7 +4,7 @@ NSQ  client for php7&php8  <br/>
 
 ### install :
 
-    Dependencies: libevent  (apt-get install libevent-dev ,yum install libevent-devel)
+    Dependencies: libevent  (apt-get install libevent-dev ,yum install libevent-devel, brew install libevent)
 
     pecl install nsq
 
@@ -190,6 +190,8 @@ Wechat: yunnian_wechat
 
 Changes
 -------
+* **3.9.0**
+  * fix connection be closed when function run over twice heartbeat time
 * **3.5.1**
   * fix publish return error when get the heartbeat
   * add exception

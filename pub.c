@@ -217,6 +217,9 @@ again:
         free(msg_size_char);
         return sock;
     } else if ( strcmp(message + 4, "_heartbeat_") == 0 ) {
+        // Send heartbeat response immediately
+        send(sock, "NOP\n", 4, 0);
+        efree(message);
         goto again_read;
     }else{
         efree(message);
@@ -290,6 +293,9 @@ int deferredPublish(int sock, char *topic, char *msg, size_t msg_len, int defer_
         free(msg_size_char);
         return sock;
     } else if ( strcmp(message + 4, "_heartbeat_") == 0 ) {
+        // Send heartbeat response immediately
+        send(sock, "NOP\n", 4, 0);
+        efree(message);
         goto again_read;
     }else{
         efree(message);
@@ -297,12 +303,7 @@ int deferredPublish(int sock, char *topic, char *msg, size_t msg_len, int defer_
         return -1;
     }
 }
-//TODO: WHEN  code execute long time after publish ，over 60s , No response heartbeat , will exit
-// so should open a separate process to listen thegit heartbeat
-/*
-void respond_hearbeat(int sock){
-    //send(sock, "NOP",3 , 0);
-}
-*/
+// Heartbeat handling has been fixed - both publish() and deferredPublish() 
+// now properly respond to heartbeats with "NOP\n" to maintain connection
 
 

@@ -1,83 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<package packagerversion="1.9.4" version="2.0"
-         xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
-    <name>nsq</name>
-    <channel>pecl.php.net</channel>
-    <summary>PHP extension for NSQ client</summary>
-    <description>
-        This extension is a NSQ client .NSQ is a message queue system which like Kafka .
-    </description>
-    <lead>
-        <name>rick/ZhenYuwu</name>
-        <user>rick</user>
-        <email>936321732@qq.com</email>
-        <active>yes</active>
-    </lead>
-    <date>2021-09-17</date>
-    <version>
-        <release>3.5.1</release>
-        <api>2.0.0</api>
-    </version>
-    <stability>
-        <release>stable</release>
-        <api>stable</api>
-    </stability>
-    <license uri="http://www.php.net/license">PHP</license>
-    <notes>
-        * for PHP8
-        * add pub connection timeout
-        * fix pub bug retrun false when revice heartbeat
-
-    </notes>
-    <contents>
-        <dir name="/">
-            <file role="doc" name="CREDITS" />
-            <file role='doc' name='README.md'/>
-            <file role='doc' name='LICENSE'/>
-            <file role='src' name='config.m4'/>
-            <file role='src' name='config.w32'/>
-            <file role='src' name='php_nsq.h'/>
-            <file role='src' name='nsq.c'/>
-            <file role='src' name='pub.c'/>
-            <file role='src' name='pub.h'/>
-            <file role='src' name='sub.c'/>
-            <file role='src' name='sub.h'/>
-            <file role='src' name='nsq_exception.c'/>
-            <file role='src' name='nsq_exception.h'/>
-            <file role='src' name='nsq_lookupd.c'/>
-            <file role='src' name='nsq_lookupd.h'/>
-            <file role='src' name='common.h'/>
-            <file role='src' name='common.c'/>
-            <file role='src' name='command.c'/>
-            <file role='src' name='command.h'/>
-            <file role='src' name='message.h'/>
-            <file role='src' name='message.c'/>
-            <dir name="examples">
-                <file role='doc' name='identify_pub.php'/>
-                <file role='doc' name='deferred_pub.php'/>
-                <file role='doc' name='identify_sub.php'/>
-                <file role='doc' name='pub.php'/>
-                <file role='doc' name='sub.php'/>
-            </dir>
-            <dir name="tests">
-                <file name="001.phpt" role="test" />
-            </dir>
-        </dir>
-    </contents>
-    <dependencies>
-        <required>
-            <php>
-                <min>7.0.0</min>
-            </php>
-            <pearinstaller>
-                <min>1.4.0</min>
-            </pearinstaller>
-        </required>
-    </dependencies>
-    <providesextension>nsq</providesextension>
-    <extsrcrelease>
-          <configureoption name="with-libevent-path" default="no" prompt="libevent directory"/>
-    </extsrcrelease>
+<package packagerversion="1.10.16" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
+ <name>nsq</name>
+ <channel>pecl.php.net</channel>
+ <summary>PHP extension for NSQ client</summary>
+ <description>This extension is a NSQ client .NSQ is a message queue system which like Kafka .</description>
+ <lead>
+  <name>rick/ZhenYuwu</name>
+  <user>rick</user>
+  <email>936321732@qq.com</email>
+  <active>yes</active>
+ </lead>
+ <date>2025-05-29</date>
+ <time>16:38:30</time>
+ <version>
+  <release>4.0.0</release>
+  <api>2.0.0</api>
+ </version>
+ <stability>
+  <release>stable</release>
+  <api>stable</api>
+ </stability>
+ <license uri="http://www.php.net/license">PHP</license>
+ <notes>
+* fix connection be closed when function run over twice heartbeat time
+ </notes>
+ <contents>
+  <dir name="/">
+   <file md5sum="d68f6b79d10d3b15b42e754e8af4958f" name="examples/identify_pub.php" role="doc" />
+   <file md5sum="414bc0fcce88ea516d1884ddab675af9" name="examples/deferred_pub.php" role="doc" />
+   <file md5sum="56ee31875b1f8c48ada98208c49f0989" name="examples/identify_sub.php" role="doc" />
+   <file md5sum="e5c0d0b79e93e50d2dc451f2b2a2be5b" name="examples/pub.php" role="doc" />
+   <file md5sum="fa81d061f347ab11069b994a169d6030" name="examples/sub.php" role="doc" />
+   <file md5sum="1ab7d36e789fd71319668604fab47e68" name="tests/001.phpt" role="test" />
+   <file md5sum="5b21a6635e8abf41e48ec09f58336094" name="CREDITS" role="doc" />
+   <file md5sum="66f4520af5d76fed22d2dd6e6781357e" name="README.md" role="doc" />
+   <file md5sum="dd34a70236f008af999de817b93a5e3a" name="LICENSE" role="doc" />
+   <file md5sum="1cbb1cb1f12567d7c0c285a667924b70" name="config.m4" role="src" />
+   <file md5sum="b7e84a401ffc081fb4d39bd18c12e064" name="config.w32" role="src" />
+   <file md5sum="15286903b973b9e9b780c28e63b4ff59" name="php_nsq.h" role="src" />
+   <file md5sum="8a72e4e7fad66b09a3b3f39bd4459021" name="nsq.c" role="src" />
+   <file md5sum="d327b5d5b472f946ee00d098cb7682a3" name="pub.c" role="src" />
+   <file md5sum="90056d8bb17eed346015c19df2590624" name="pub.h" role="src" />
+   <file md5sum="3b851a6f8d07a9626e679930464039f8" name="sub.c" role="src" />
+   <file md5sum="646452c68a78cefebf9298e6db9bbe13" name="sub.h" role="src" />
+   <file md5sum="fb1d54eff7c3fba5900030e679387a67" name="nsq_exception.c" role="src" />
+   <file md5sum="b41549c07af59ab61986217c5ceb8e5e" name="nsq_exception.h" role="src" />
+   <file md5sum="2bf0c3e81f796022df9f47f77c7fb157" name="nsq_lookupd.c" role="src" />
+   <file md5sum="9dacd7ba69206a3acbe39c1680348943" name="nsq_lookupd.h" role="src" />
+   <file md5sum="7063a8015cf2f110e1c0bb0d2e209b9f" name="common.h" role="src" />
+   <file md5sum="9a8f780a3ad7957f7d10b863bdac5cb6" name="common.c" role="src" />
+   <file md5sum="a5fd1cca37fe6caf563e3228f051ff2d" name="command.c" role="src" />
+   <file md5sum="7d1a2252ec619fb6f1210e235702f25c" name="command.h" role="src" />
+   <file md5sum="1dcd07a4085e46568e989bff2aee2c12" name="message.h" role="src" />
+   <file md5sum="a4b078a0848a6f68e6c97d461d8460ae" name="message.c" role="src" />
+  </dir>
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>7.0.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <providesextension>nsq</providesextension>
+ <extsrcrelease>
+  <configureoption default="no" name="with-libevent-path" prompt="libevent directory" />
+ </extsrcrelease>
 </package>

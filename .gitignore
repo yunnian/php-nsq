@@ -53,3 +53,13 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Dependency files
+*.dep
+
+# Temporary files from autotools
+config.h.in~
+configure~
+
+# NSQ data files
+examples/nsqd.dat
