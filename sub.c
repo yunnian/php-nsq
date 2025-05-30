@@ -21,7 +21,6 @@
 #include <event2/listener.h>
 #include <event2/event.h>
 #include <sys/wait.h>
-#include <sys/select.h>
 #include <signal.h>
 #include <unistd.h>
 #include "sub.h"
@@ -43,7 +42,7 @@ void conn_eventcb(struct bufferevent *, short, void *);
 
 extern int le_bufferevent;
 
-// IPC通信结构
+// IPC communication structures
 typedef struct {
     char message_id[17];
     char *body;
@@ -59,12 +58,12 @@ typedef struct {
     int success; // 1 = success, 0 = failed
 } worker_result_t;
 
-// 全局管道
-static int msg_pipe[2];  // 主进程 -> worker进程
-static int result_pipe[2]; // worker进程 -> 主进程
+// Global pipes
+static int msg_pipe[2];  // main process -> worker process
+static int result_pipe[2]; // worker process -> main process
 static pid_t worker_pid = 0;
 
-// 添加result_pipe的事件处理函数
+// Event handler for result_pipe
 void result_pipe_cb(evutil_socket_t fd, short events, void *arg) {
     struct NSQArg *nsq_arg = (struct NSQArg *)arg;
     struct bufferevent *bev = (struct bufferevent *)nsq_arg->bev_res->ptr;
@@ -74,7 +73,7 @@ void result_pipe_cb(evutil_socket_t fd, short events, void *arg) {
     worker_result_t result;
     ssize_t n = read(result_pipe[0], &result, sizeof(worker_result_t));
     if (n == sizeof(worker_result_t)) {
-        // 根据worker处理结果发送FIN/REQ
+        // Send FIN/REQ based on worker processing result
         if (auto_finish) {
             if (result.success) {
                 char fin_cmd[64];
@@ -87,15 +86,15 @@ void result_pipe_cb(evutil_socket_t fd, short events, void *arg) {
                 bufferevent_write(bev, req_cmd, strlen(req_cmd));
             }
         }
-        // 发送完FIN/REQ后立即发送RDY，准备接收下一条消息
+        // Send RDY immediately after FIN/REQ to prepare for next message
         nsq_ready(bev, msg->rdy);
     }
 }
 
-// worker进程主循环
+// Worker process main loop
 void worker_process_main(zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_resource *bev_res) {
-    close(msg_pipe[1]);    // 关闭写端
-    close(result_pipe[0]); // 关闭读端
+    close(msg_pipe[1]);    // Close write end
+    close(result_pipe[0]); // Close read end
     
     while (1) {
         worker_message_t work_msg;
@@ -188,26 +187,26 @@ int subscribe(NSQArg *arg) {
     memset(&srv, 0, sizeof(srv));
     int retry_num = 1;
 
-    // 创建IPC管道
+    // Create IPC pipes
     if (pipe(msg_pipe) == -1 || pipe(result_pipe) == -1) {
         perror("pipe creation failed");
         return 1;
     }
 
-    // fork worker进程
+    // Fork worker process
     worker_pid = fork();
     if (worker_pid == 0) {
-        // worker进程
+        // Worker process
         worker_process_main(arg->fci, arg->fcc, arg->bev_res);
-        exit(0); // worker进程退出
+        exit(0); // Worker process exit
     } else if (worker_pid < 0) {
         perror("fork failed");
         return 1;
     }
 
-    // 主进程：关闭不需要的管道端
-    close(msg_pipe[0]);    // 关闭读端
-    close(result_pipe[1]); // 关闭写端
+    // Main process: close unnecessary pipe ends
+    close(msg_pipe[0]);    // Close read end
+    close(result_pipe[1]); // Close write end
 
     if (check_ipaddr(arg->host)) {
         srv.sin_addr.s_addr = inet_addr(arg->host);
