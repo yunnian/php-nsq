@@ -40,10 +40,12 @@ void readcb(struct bufferevent *, void *msg);
 
 void conn_eventcb(struct bufferevent *, short, void *);
 
+void cleanup_message_queue();
+
 extern int le_bufferevent;
 
-// IPC communication structures
-typedef struct {
+// Message queue structure - for caching business messages to be processed
+typedef struct pending_message {
     char message_id[17];
     char *body;
     size_t body_len;
@@ -51,162 +53,159 @@ typedef struct {
     uint16_t attempts;
     int delay_time;
     int auto_finish;
-} worker_message_t;
+    struct pending_message *next;
+} pending_message_t;
 
-typedef struct {
-    char message_id[17];
-    int success; // 1 = success, 0 = failed
-} worker_result_t;
+// Global message queue
+static pending_message_t *message_queue_head = NULL;
+static pending_message_t *message_queue_tail = NULL;
+static int pending_message_count = 0;
 
-// Global pipes
-static int msg_pipe[2];  // main process -> worker process
-static int result_pipe[2]; // worker process -> main process
-static pid_t worker_pid = 0;
-
-// Event handler for result_pipe
-void result_pipe_cb(evutil_socket_t fd, short events, void *arg) {
-    struct NSQArg *nsq_arg = (struct NSQArg *)arg;
-    struct bufferevent *bev = (struct bufferevent *)nsq_arg->bev_res->ptr;
-    struct NSQMsg *msg = nsq_arg->msg;
-    int auto_finish = msg->auto_finish;
+// Add message to queue
+void enqueue_message(const char *message_id, const char *body, size_t body_len, 
+                    int64_t timestamp, uint16_t attempts, int delay_time, int auto_finish) {
+    pending_message_t *msg = malloc(sizeof(pending_message_t));
+    if (!msg) return; // Memory allocation check
     
-    worker_result_t result;
-    ssize_t n = read(result_pipe[0], &result, sizeof(worker_result_t));
-    if (n == sizeof(worker_result_t)) {
-        // Send FIN/REQ based on worker processing result
-        if (auto_finish) {
-            if (result.success) {
-                char fin_cmd[64];
-                snprintf(fin_cmd, sizeof(fin_cmd), "FIN %s\n", result.message_id);
-                bufferevent_write(bev, fin_cmd, strlen(fin_cmd));
-            } else {
-                char req_cmd[128];
-                snprintf(req_cmd, sizeof(req_cmd), "REQ %s %d\n", 
-                       result.message_id, msg->delay_time);
-                bufferevent_write(bev, req_cmd, strlen(req_cmd));
-            }
-        }
-        // Send RDY immediately after FIN/REQ to prepare for next message
-        nsq_ready(bev, msg->rdy);
+    memcpy(msg->message_id, message_id, 16);
+    msg->message_id[16] = '\0';
+    msg->body = malloc(body_len + 1);
+    if (!msg->body) {
+        free(msg);
+        return; // Memory allocation check
     }
+    
+    memcpy(msg->body, body, body_len);
+    msg->body[body_len] = '\0';
+    msg->body_len = body_len;
+    msg->timestamp = timestamp;
+    msg->attempts = attempts;
+    msg->delay_time = delay_time;
+    msg->auto_finish = auto_finish;
+    msg->next = NULL;
+    
+    if (message_queue_tail) {
+        message_queue_tail->next = msg;
+        message_queue_tail = msg;
+    } else {
+        message_queue_head = message_queue_tail = msg;
+    }
+    pending_message_count++;
 }
 
-// Worker process main loop
-void worker_process_main(zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_resource *bev_res) {
-    close(msg_pipe[1]);    // Close write end
-    close(result_pipe[0]); // Close read end
+// Get message from queue
+pending_message_t* dequeue_message() {
+    if (!message_queue_head) return NULL;
     
-    while (1) {
-        worker_message_t work_msg;
-        ssize_t n = read(msg_pipe[0], &work_msg, sizeof(worker_message_t));
-        if (n != sizeof(worker_message_t)) {
-            if (n == 0) {
-                break; // pipe closed, exiting
-            }
-            continue; // read failed, continue waiting
+    pending_message_t *msg = message_queue_head;
+    message_queue_head = msg->next;
+    if (!message_queue_head) {
+        message_queue_tail = NULL;
+    }
+    pending_message_count--;
+    
+    return msg;
+}
+
+// Function to process single business message
+void process_business_message(pending_message_t *msg, zend_fcall_info *fci, zend_fcall_info_cache *fcc, 
+                             zend_resource *bev_res, struct bufferevent *bev, struct NSQMsg *nsq_msg) {
+    
+    // Create PHP object and call user function
+    zval retval;
+    zval params[2];
+    zval msg_object;
+    zval message_id;
+    zval attempts;
+    zval payload;
+    zval timestamp;
+
+    object_init_ex(&msg_object, nsq_message_ce);
+
+    //message_id
+    zend_string *message_id_str = zend_string_init(msg->message_id, 16, 0);
+    ZVAL_STR_COPY(&message_id, message_id_str);
+    zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("message_id"), &message_id);
+    zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("messageId"), &message_id);
+
+    //attempts
+    ZVAL_LONG(&attempts, msg->attempts);
+    zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("attempts"), &attempts);
+    //timestamp
+    ZVAL_LONG(&timestamp, msg->timestamp);
+    zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("timestamp"), &timestamp);
+
+    //payload
+    zend_string *payload_str = zend_string_init(msg->body, msg->body_len, 0);
+    ZVAL_STR_COPY(&payload, payload_str);
+    zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("payload"), &payload);
+
+    //call function
+    ZVAL_OBJ(&params[0], Z_OBJ(msg_object));
+    ZVAL_RES(&params[1], bev_res);
+    fci->params = params;
+    fci->param_count = 2;
+    fci->retval = &retval;
+    
+    int callback_success = 0;
+    if (zend_call_function(fci, fcc) == SUCCESS) {
+        if (!EG(exception)) {
+            callback_success = 1;
+        } else {
+            zend_clear_exception();
         }
-        
-        // Read message body
-        char *msg_body = malloc(work_msg.body_len + 1);
-        n = read(msg_pipe[0], msg_body, work_msg.body_len);
-        if (n != work_msg.body_len) {
-            free(msg_body);
-            continue;
+    }
+
+    // Send FIN/REQ based on callback result
+    if (msg->auto_finish) {
+        if (callback_success) {
+            char fin_cmd[64];
+            snprintf(fin_cmd, sizeof(fin_cmd), "FIN %s\n", msg->message_id);
+            bufferevent_write(bev, fin_cmd, strlen(fin_cmd));
+        } else {
+            char req_cmd[128];
+            snprintf(req_cmd, sizeof(req_cmd), "REQ %s %d\n", msg->message_id, msg->delay_time);
+            bufferevent_write(bev, req_cmd, strlen(req_cmd));
         }
-        msg_body[work_msg.body_len] = '\0';
+    }
+
+    //free memory
+    zval_dtor(&params[0]);
+    zend_string_release(payload_str);
+    zend_string_release(message_id_str);
+    zval_dtor(&timestamp);
+    zval_dtor(&retval);
+    zval_dtor(&message_id);
+    zval_dtor(&attempts);
+    zval_dtor(&payload);
+}
+
+// Message processing event callback - use timer to periodically process messages in queue
+void process_message_queue(evutil_socket_t fd, short events, void *arg) {
+    struct NSQArg *nsq_arg = (struct NSQArg *)arg;
+    struct bufferevent *bev = (struct bufferevent *)nsq_arg->bev_res->ptr;
+    struct NSQMsg *nsq_msg = nsq_arg->msg;
+    
+    // Process at most one message at a time to ensure timely heartbeat processing
+    pending_message_t *msg = dequeue_message();
+    if (msg) {
+        process_business_message(msg, nsq_arg->fci, nsq_arg->fcc, nsq_arg->bev_res, bev, nsq_msg);
         
-        // Create PHP object and call user function
-        zval retval;
-        zval params[2];
-        zval msg_object;
-        zval message_id;
-        zval attempts;
-        zval payload;
-        zval timestamp;
-
-        object_init_ex(&msg_object, nsq_message_ce);
-
-        //message_id
-        zend_string *message_id_str = zend_string_init(work_msg.message_id, 16, 0);
-        ZVAL_STR_COPY(&message_id, message_id_str);
-        zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("message_id"), &message_id);
-        zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("messageId"), &message_id);
-
-        //attempts
-        ZVAL_LONG(&attempts, work_msg.attempts);
-        zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("attempts"), &attempts);
-        //timestamp
-        ZVAL_LONG(&timestamp, work_msg.timestamp);
-        zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("timestamp"), &timestamp);
-
-        //payload
-        zend_string *payload_str = zend_string_init(msg_body, work_msg.body_len, 0);
-        ZVAL_STR_COPY(&payload, payload_str);
-        zend_update_property(nsq_message_ce, NSQ_COMPAT_OBJ_P(&msg_object), ZEND_STRL("payload"), &payload);
-
-        //call function
-        ZVAL_OBJ(&params[0], Z_OBJ(msg_object));
-        ZVAL_RES(&params[1], bev_res);
-        fci->params = params;
-        fci->param_count = 2;
-        fci->retval = &retval;
+        // Clean up message
+        free(msg->body);
+        free(msg);
         
-        int callback_success = 0;
-        if (zend_call_function(fci, fcc) == SUCCESS) {
-            if (!EG(exception)) {
-                callback_success = 1;
-            } else {
-                zend_clear_exception();
-            }
-        }
-
-        // Send result back to main process
-        worker_result_t result;
-        memcpy(result.message_id, work_msg.message_id, 16);
-        result.message_id[16] = '\0';
-        result.success = callback_success;
-        
-        write(result_pipe[1], &result, sizeof(worker_result_t));
-
-        //free memory
-        zval_dtor(&params[0]);
-        zend_string_release(payload_str);
-        zend_string_release(message_id_str);
-        zval_dtor(&timestamp);
-        zval_dtor(&retval);
-        zval_dtor(&message_id);
-        zval_dtor(&attempts);
-        zval_dtor(&payload);
-        free(msg_body);
+        // Send RDY to prepare for next message
+        nsq_ready(bev, nsq_msg->rdy);
     }
 }
 
 int subscribe(NSQArg *arg) {
+    
     struct sockaddr_in srv;
     struct hostent *he;
     memset(&srv, 0, sizeof(srv));
     int retry_num = 1;
-
-    // Create IPC pipes
-    if (pipe(msg_pipe) == -1 || pipe(result_pipe) == -1) {
-        perror("pipe creation failed");
-        return 1;
-    }
-
-    // Fork worker process
-    worker_pid = fork();
-    if (worker_pid == 0) {
-        // Worker process
-        worker_process_main(arg->fci, arg->fcc, arg->bev_res);
-        exit(0); // Worker process exit
-    } else if (worker_pid < 0) {
-        perror("fork failed");
-        return 1;
-    }
-
-    // Main process: close unnecessary pipe ends
-    close(msg_pipe[0]);    // Close read end
-    close(result_pipe[1]); // Close write end
 
     if (check_ipaddr(arg->host)) {
         srv.sin_addr.s_addr = inet_addr(arg->host);
@@ -233,33 +232,20 @@ int subscribe(NSQArg *arg) {
     int flag = bufferevent_socket_connect(bev, (struct sockaddr *) &srv, sizeof(srv));
     bufferevent_enable(bev, EV_READ | EV_WRITE);
     
-    // Add event listener for result_pipe
-    struct event *result_event = event_new(base, result_pipe[0], EV_READ | EV_PERSIST, result_pipe_cb, (void *)arg);
-    event_add(result_event, NULL);
+    // Add timer to periodically process message queue (0ms interval, fastest response)
+    struct timeval tv = {0, 1000}; // 1000 milliseconds - fastest processing
+    struct event *process_event = event_new(base, -1, EV_PERSIST, process_message_queue, (void *)arg);
+    event_add(process_event, &tv);
     
     if (-1 == flag) {
         throw_exception(PHP_NSQ_ERROR_CONNECTION_FAILED);
-        /*
-        if(retry_num <= 10000){
-            retry_num ++;
-            bufferevent_free(bev);
-            event_base_free(base);
-            subscribe(address, port, msg, callback);
-        }
-        */
         return 1;
     }
 
     event_base_dispatch(base);
     
-    // Clean up worker process
-    if (worker_pid > 0) {
-        kill(worker_pid, SIGTERM);
-        waitpid(worker_pid, NULL, 0);
-    }
-    close(msg_pipe[1]);
-    close(result_pipe[0]);
-    
+    // Cleanup on exit
+    cleanup_message_queue();
     event_base_free(base);
     return 1;
 }
@@ -292,12 +278,12 @@ void conn_eventcb(struct bufferevent *bev, short events, void *user_data) {
     bufferevent_free(bev);
 }
 
-struct NSQMsg *msg ;
-int is_first = 1;
-int l = 0;
-char *message ;
-
 void readcb(struct bufferevent *bev, void *arg) {
+    static struct NSQMsg *msg = NULL;
+    static int is_first = 1;
+    static int l = 0;
+    static char *message = NULL;
+    
     msg = ((struct NSQArg *) arg)->msg;
     int auto_finish = msg->auto_finish;
     zend_fcall_info *fci = ((struct NSQArg *) arg)->fci;;
@@ -334,7 +320,7 @@ void readcb(struct bufferevent *bev, void *arg) {
             readI32((const unsigned char *) message, &msg->frame_type);
 
             if (msg->frame_type == 0) {
-                // this is heartbeat - respond immediately, absolute priority
+                // Heartbeat message - respond immediately
                 if (msg->size == 15) {
                     bufferevent_write(bev, "NOP\n", strlen("NOP\n"));
                     // this is response  OK
@@ -352,40 +338,29 @@ void readcb(struct bufferevent *bev, void *arg) {
                 }
                 break;
             } else if (msg->frame_type == 2) {
-                // Business message - send to worker process for handling
+                // Business message - put into queue for processing
                 
-                msg->message_id = (char *) emalloc(17);
-                memset(msg->message_id, '\0', 17);
+                char message_id[17];
+                memset(message_id, '\0', 17);
 
-                msg->timestamp = (int64_t) ntoh64((const unsigned char *) message + 4);
-                readI16((const unsigned char *) message + 12, &msg->attempts);
+                int64_t timestamp = (int64_t) ntoh64((const unsigned char *) message + 4);
+                uint16_t attempts;
+                readI16((const unsigned char *) message + 12, &attempts);
 
-                memcpy(msg->message_id, message + 14, 16);
+                memcpy(message_id, message + 14, 16);
 
-                msg->body = (char *) emalloc(msg->size - 30 + 1);
-                memset(msg->body, '\0', msg->size - 30 + 1);
-                memcpy(msg->body, message + 30, msg->size - 30);
+                char *body = (char *) malloc(msg->size - 30 + 1);
+                if (body) {  // Memory allocation check
+                    memset(body, '\0', msg->size - 30 + 1);
+                    memcpy(body, message + 30, msg->size - 30);
 
-                // Send message to worker process for handling
-                worker_message_t work_msg;
-                memcpy(work_msg.message_id, msg->message_id, 16);
-                work_msg.message_id[16] = '\0';
-                work_msg.body_len = strlen(msg->body);
-                work_msg.timestamp = msg->timestamp;
-                work_msg.attempts = msg->attempts;
-                work_msg.delay_time = msg->delay_time;
-                work_msg.auto_finish = auto_finish;
+                    // Put message into queue
+                    enqueue_message(message_id, body, msg->size - 30, timestamp, attempts, 
+                                   msg->delay_time, auto_finish);
 
-                // Send message header
-                ssize_t n = write(msg_pipe[1], &work_msg, sizeof(worker_message_t));
-                if (n == sizeof(worker_message_t)) {
-                    // Send message body
-                    write(msg_pipe[1], msg->body, work_msg.body_len);
+                    // Free temporary memory
+                    free(body);
                 }
-
-                // Clean up main process memory
-                efree(msg->body);
-                efree(msg->message_id);
 
                 memset(&msg->size, 0x00, 4);
                 efree(message);
@@ -400,7 +375,10 @@ void readcb(struct bufferevent *bev, void *arg) {
             break;
         }
         if (l == -1) {
-            error_handlings("read() error");;
+            error_handlings("read() error");
+            l = 0;
+            is_first = 1;
+            break;
         }
 
     }
@@ -408,4 +386,15 @@ void readcb(struct bufferevent *bev, void *arg) {
 
 void conn_writecb(struct bufferevent *bev, void *user_data) {
 }  
+
+// Clean up all messages in queue (for shutdown)
+void cleanup_message_queue() {
+    while (message_queue_head) {
+        pending_message_t *msg = dequeue_message();
+        if (msg) {
+            free(msg->body);
+            free(msg);
+        }
+    }
+}
 
