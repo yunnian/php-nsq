@@ -190,6 +190,8 @@ Wechat: yunnian_wechat
 
 Changes
 -------
+* **3.9.1**
+  * Fixed consumer not working on CentOS: Switched to timer-based solution, abandoned multi-process approach
 * **3.9.0**
   * fix connection be closed when function run over twice heartbeat time
 * **3.5.1**

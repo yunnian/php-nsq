@@ -10,10 +10,10 @@
   <email>936321732@qq.com</email>
   <active>yes</active>
  </lead>
- <date>2025-05-29</date>
- <time>16:38:30</time>
+ <date>2025-06-09</date>
+ <time>18:00:00</time>
  <version>
-  <release>3.9.0</release>
+  <release>3.9.1</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -22,7 +22,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP</license>
  <notes>
-* fix connection be closed when function run over twice heartbeat time
+Fixed consumer not working on CentOS: Switched to timer-based solution, abandoned multi-process approach
  </notes>
  <contents>
   <dir name="/">
