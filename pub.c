@@ -27,7 +27,11 @@
 #include "ext/standard/php_var.h"
 #include <errno.h>
 #include <fcntl.h>
+#if PHP_VERSION_ID < 70200
 #include "ext/standard/php_smart_string_public.h"
+#else
+#include "Zend/zend_smart_string.h"
+#endif
 #include "ext/json/php_json.h"
 #include "zend_smart_str.h"
 #include <signal.h>
